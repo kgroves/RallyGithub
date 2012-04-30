@@ -1,0 +1,12 @@
+{
+    "name": "RallyGithub",
+    "className": "CustomApp",
+    "sdk": "2.0p",
+    "javascript": [
+        "changeset/adapter/Github.js",
+        "App.js"
+    ],
+    "css": [
+        "app.css"
+    ]
+}

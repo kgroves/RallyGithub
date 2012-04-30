@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RallyGithub</title>
+
+    <script type="text/javascript" src="https://rally1.rallydev.com/apps/2.0p/sdk-debug.js"></script>
+
+    <script type="text/javascript">
+        Rally.onReady(function() {
+            Rally.loadScripts([
+                "changeset/adapter/Github.js",
+                "App.js"
+            ], function() {
+                Rally.launchApp('CustomApp', {
+                    name: 'RallyGithub'
+                })
+            }, true);
+        });
+    </script>
+
+<link rel="stylesheet" type="text/css" href="app.css">
+</head>
+<body></body>
+</html>
