@@ -3,10 +3,16 @@
     "className": "CustomApp",
     "sdk": "2.0p",
     "javascript": [
-        "changeset/adapter/Github.js",
+        "changeset/model/Branch.js",
+        "changeset/model/Commit.js",
+        "changeset/data/GithubProxy.js",
+        "changeset/data/GithubAdapter.js",
+        "changeset/ui/ChangesetGrid.js",
+        "changeset/ui/ChangesetBrowser.js",
         "App.js"
     ],
     "css": [
+        "changeset/resources/css/changesetbrowser.css",
         "app.css"
     ]
 }

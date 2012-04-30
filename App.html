@@ -7,19 +7,61 @@
 
     <script type="text/javascript">
         Rally.onReady(function() {
-            /**
-             * Integrates Github with changeset ui components.
+            Ext.define('changeset.model.Branch', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'commit', type: 'object'},
+                    {name: 'name', type: 'string'}
+                ]
+            });            Ext.define('changeset.model.Commit', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'revision', type: 'string'},
+                    {name: 'url', type: 'string'},
+                    {name: 'author', type: 'object'},
+                    {name: 'message', type: 'string'},
+                    {name: 'tree', type: 'object'},
+                    {name: 'parents', type: 'array'}
+                ]
+            });            Ext.define('changeset.data.GithubProxy', {
+                extend: 'Ext.data.proxy.Rest',
+            
+                statics: {
+                    /**
+                     * Build Commit record from Github api data.
+                     */
+                    extractCommitValues: function(data) {
+                        var output = {
+                            revision: data.sha,
+                            url: data.url,
+                            author: data.author,
+                            parents: data.parents
+                        };
+            
+                        var commit = data.commit;
+                        if (commit) {
+                            Ext.apply(output, commit);
+                        }
+                        return output
+                    }
+                },
+            
+                stripRallyHeaders: true,
+                pageParam: 'page',
+                limitParam: 'per_page',
+                startParam: undefined
+            });            /**
+             * Adapter classes contain methods to construct Store objects for use by ui components.
              */
             Ext.define('changeset.adapter.Github', {
-                mixins: {
-                    observable: 'Ext.util.Observable'
-                },
+                extend: 'Ext.util.Observable',
+                require: ['changeset.model.Changeset', 'changeset.data.GithubProxy'],
             
                 /**
                  * @cfg
                  * Github username
                  */
-                username: '',
+                username: 'rally-dthompson',
             
                 /**
                  * @cfg
@@ -35,6 +77,12 @@
             
                 /**
                  * @cfg
+                 * Branch to grab commits from
+                 */
+                branch: 'master',
+            
+                /**
+                 * @cfg
                  * Base url for all Github api requests.
                  */
                 apiUrl: 'https://api.github.com',
@@ -43,23 +91,67 @@
                  * @cfg
                  * OAuth token for Github api
                  */
-                authToken: '',
+                authToken: 'b9cb017fd4a5ab1c722056d145689a52854d41d3',
             
                 constructor: function(config) {
                     Ext.apply(this, config);
             
-                    this.addEvents([
+                    this.addEvents(
                         /**
                          * @event
-                         *
                          * Fired when the adapter is ready to be used.
                          */
                         'ready'
-                    ]);
+                    );
+            
+                    this.callParent(arguments);
             
                     Ext.Ajax.on('beforerequest', this._onBeforeAjaxRequest, this);
+                },
+            
+                /**
+                 * Initializes the adapter.
+                 */
+                init: function(callback, scope) {
+                    this.on('ready', function() {
+                        callback.call(scope, this);
+                    }, this, {single: true});
             
                     this._authenticate();
+                },
+            
+                /**
+                 * Constructs a store which populates branch models.
+                 */
+                getBranchStore: function(callback, scope) {
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this.username,
+                        this.repository,
+                        'branches'
+                    ].join('/');
+            
+                    var store = Ext.create('Ext.data.Store', {
+                        model: 'changeset.model.Branch',
+                        proxy: Ext.create('changeset.data.GithubProxy', {
+                            url: url
+                        })
+                    });
+            
+                    callback.call(scope, store);
+                },
+            
+                /**
+                 * Returns a store which populates commit models.
+                 */
+                getCommitStore: function(callback, scope) {
+                    this.getBranchStore(function(store) {
+                        store.on('load', function(store) {
+                            this._onBranchLoad(store, callback, scope);
+                        }, this, {single: true});
+                        store.load();
+                    }, this);
                 },
             
                 /**
@@ -90,25 +182,206 @@
                     });
                 },
             
-                _onBeforeAjaxRequest: function(ext, opts) {
-                    this._stripRallyHeaders(opts);
-                },
-            
                 /**
                  * Removes Rally specific headers from Ajax request options.
                  */
                 _stripRallyHeaders: function(opts) {
-                    if (opts.stripRallyHeaders && opts.headers) {
+                    if ((opts.stripRallyHeaders || (opts.scope && opts.scope.stripRallyHeaders)) && opts.headers) {
                         delete opts.headers["X-RallyIntegrationLibrary"];
                         delete opts.headers["X-RallyIntegrationName"];
                     }
+                },
+            
+                _onBeforeAjaxRequest: function(ext, opts) {
+                    this._stripRallyHeaders(opts);
+                },
+            
+                _onBranchLoad: function(store, callback, scope) {
+                    var branch = store.findRecord('name', this.branch);
+            
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this.username,
+                        this.repository,
+                        'commits'
+                    ].join('/');
+            
+                    var store = Ext.create('Ext.data.Store', {
+                        model: 'changeset.model.Commit',
+                        proxy: Ext.create('changeset.data.GithubProxy', {
+                            url: url,
+                            extraParams: {
+                                sha: branch.get('commit').sha
+                            },
+                            reader: {
+                                type: 'json',
+                                extractValues: changset.data.GithubProxy.extractCommitValues
+                            }
+                        })
+                    });
+                    callback.call(scope, store);
                 }
+            });            Ext.define('changeset.ui.ChangesetGrid', {
+                extend: 'Rally.ui.grid.Grid',
+                require: ['Rally.util.Navigation'],
+                alias: 'widget.changesetgrid',
+                cls: 'changeset-grid',
+            
+                columnCfgs: [
+                    {
+                        header: 'Message',
+                        dataIndex: 'message',
+                        flex: 1
+                    },
+            //        {
+            //            header: 'Artifact',
+            //            dataIndex: 'Artifacts',
+            //            renderer: function(values) {
+            //                var detailLinks = [],
+            //                    detailLinkBuilder = Ext.create('Rally.util.DetailLinkBuilder');
+            //
+            //                Ext.each(values, function(value) {
+            //                    var href = Rally.util.Navigation.createRallyDetailUrl(value._ref, false);
+            //                    var el = '<a href="' + href + '">' + value.FormattedID + '</a>';
+            //                    detailLinks.push(el);
+            //                });
+            //
+            //                return detailLinks.join(', ');
+            //            }
+            //        },
+            //        {
+            //            header: 'Author',
+            //            dataIndex: 'FormattedAuthor',
+            //            flex: .3
+            //        },
+            //        {
+            //            header: 'Commit Time',
+            //            dataIndex: 'FormattedCommitTimestamp',
+            //            width: 140
+            //        },
+            //        {
+            //            header: 'Revision',
+            //            dataIndex: 'Revision',
+            //            renderer: function(value) {
+            //                var label = value.substring(0, 10) + '...';
+            //                return Ext.String.format('<a href="#" class="changeset-revision-link">{0}</a>', label);
+            //            },
+            //            width: 80
+            //        }
+                ],
+            
+                constructor: function(config) {
+                    config = config || {};
+                    Ext.applyIf(config, {
+                        columnCfgs: this.columnCfgs
+                    });
+                    this.callParent([config]);
+                },
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+            //        this.addEvents('revisionClicked');
+            //
+            //        this.on('itemclick', this._onRevisionClick, this, {
+            //            delegate: '.changeset-revision-link',
+            //            stopEvent: true
+            //        });
+                },
+            
+                _onRevisionClick: function(grid, record) {
+                    this.fireEvent('revisionClicked', record);
+                },
+            
+            //    _onStoreLoad: function(store) {
+            //        store.each(function(record) {
+            //            var rawMsg = record.get('Message');
+            //            var msg = rawMsg.replace(/^.+[\-]\d{4}\s+/m, '');
+            //            msg = msg.replace(/\s[ADRM]\s.+$/m, '');
+            //            record.set('FormattedMessage', msg);
+            //
+            //            var auth = rawMsg.replace(/^.+Author:\s+/im, '');
+            //            auth = auth.replace(/\s+Date:.+$/im, '');
+            //            record.set('FormattedAuthor', auth);
+            //
+            //            var rawDate = record.get('CommitTimestamp');
+            //            record.set('FormattedCommitTimestamp', Ext.util.Format.date(rawDate, 'Y-m-d h:i:s A'));
+            //        });
+            //    }
+            });            Ext.define('changeset.ui.ChangesetBrowser', {
+                extend: 'Ext.panel.Panel',
+                alias: 'widget.changesetbrowser',
+                require: ['changeset.ui.ChangesetGrid'],
+                cls: 'changeset-browser',
+                layout: {
+                    type: 'accordion',
+                    animate: true
+                },
+            
+                /**
+                 * @cfg
+                 * Adapter to use for retrieving data.
+                 */
+                adapter: null,
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this._addGrid();
+                },
+            
+                _addGrid: function() {
+                    this.adapter.getCommitStore(function(store) {
+                        var grid = this.add(
+                            {
+                                xtype: 'changesetgrid',
+                                margin: '10 0 0 0',
+                                autoScroll: true,
+                                model: 'changeset.model.Commit',
+                                store: store
+                            }
+                        );
+                        grid.setTitle('Change Sets');
+            
+                        grid.getStore().on('load', function() {
+                            console.log(grid.getStore());
+                        });
+            
+                        grid.getStore().load();
+                        ////        this.mon(grid, 'revisionClicked', this._showRevision, this);
+            
+                    }, this);
+                }
+            
+            //    _showRevision: function(record) {
+            //        if (this.items.getCount() > 1) {
+            //            this.remove(this.items.getAt(1));
+            //        }
+            //        var revision = this.add({
+            //            xtype: 'changeset',
+            //            title: 'Revision: ' + record.get('Revision'),
+            //            autoScroll: true,
+            //            record: record
+            //        });
+            //        revision.expand();
+            //    }
             });            Ext.define('CustomApp', {
                 extend: 'Rally.app.App',
+                require: ['changeset.data.GithubAdapter', 'changeset.ui.ChangesetBrowser'],
                 componentCls: 'app',
+                layout: 'fit',
             
                 launch: function() {
-                    //Write app code here
+                    var adapter = Ext.create('changeset.data.GithubAdapter');
+                    adapter.init(this._onAdapterInit, this);
+                },
+            
+                _onAdapterInit: function(adapter) {
+                    this.add({
+                        xtype: 'changesetbrowser',
+                        margin: 5,
+                        border: 0,
+                        adapter: adapter
+                    });
                 }
             });
 
@@ -119,7 +392,9 @@
     </script>
 
     <style type="text/css">
-        .app {
+        .changeset-browser-title .x-panel-body {
+            font-size: 18px;
+        }        .app {
              /* Add app styles here */
         }
     </style>

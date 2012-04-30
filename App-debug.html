@@ -8,7 +8,12 @@
     <script type="text/javascript">
         Rally.onReady(function() {
             Rally.loadScripts([
-                "changeset/adapter/Github.js",
+                "changeset/model/Branch.js",
+                "changeset/model/Commit.js",
+                "changeset/data/GithubProxy.js",
+                "changeset/data/GithubAdapter.js",
+                "changeset/ui/ChangesetGrid.js",
+                "changeset/ui/ChangesetBrowser.js",
                 "App.js"
             ], function() {
                 Rally.launchApp('CustomApp', {
@@ -18,6 +23,7 @@
         });
     </script>
 
+<link rel="stylesheet" type="text/css" href="changeset/resources/css/changesetbrowser.css">
 <link rel="stylesheet" type="text/css" href="app.css">
 </head>
 <body></body>
