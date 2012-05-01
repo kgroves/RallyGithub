@@ -39,7 +39,7 @@ Ext.define('changeset.data.GithubAdapter', {
      * @cfg
      * OAuth token for Github api
      */
-    authToken: '',
+    authToken: 'b9cb017fd4a5ab1c722056d145689a52854d41d3',
 
     constructor: function(config) {
         Ext.apply(this, config);
@@ -66,6 +66,13 @@ Ext.define('changeset.data.GithubAdapter', {
         }, this, {single: true});
 
         this._authenticate();
+    },
+
+    /**
+     * Return a url to the repository.
+     */
+    getRepositoryUrl: function() {
+        return 'https://github.com/' + this.username + '/' + this.repository;
     },
 
     /**

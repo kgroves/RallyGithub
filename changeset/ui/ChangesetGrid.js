@@ -4,11 +4,27 @@ Ext.define('changeset.ui.ChangesetGrid', {
     alias: 'widget.changesetgrid',
     cls: 'changeset-grid',
 
+    /**
+     * @cfg
+     * Artifact type prefix regexes to match in commit messages.
+     */
+    artifactRegexes: [
+        /(\s+)(DE\d+)/,
+        /(\s+)(US\d+)/,
+        /(\s+)(TA\d+)/
+    ],
+
     columnCfgs: [
         {
             header: 'Message',
             dataIndex: 'message',
-            flex: 1
+            flex: 1,
+            renderer: function(value) {
+                Ext.each(this.artifactRegexes, function(artifactRegex) {
+                    value = value.replace(artifactRegex, '<a href="#" class="artifact-link">$1$2</a>');
+                });
+                return value;
+            }
         },
         {
             xtype: 'templatecolumn',
@@ -44,31 +60,30 @@ Ext.define('changeset.ui.ChangesetGrid', {
 
     initComponent: function() {
         this.callParent(arguments);
-//        this.addEvents('revisionClicked');
-//
-//        this.on('itemclick', this._onRevisionClick, this, {
-//            delegate: '.changeset-revision-link',
-//            stopEvent: true
-//        });
+        this.addEvents(
+            /**
+             * @event
+             * fired when a revision is clicked.
+             */
+            'revisionClicked',
+            /**
+             * @event
+             * fired when an artifact is clicked.
+             */
+            'artifactClicked'
+        );
+
+        this.on('itemclick', this._onArtifactClick, this, {
+            delegate: '.artifact-link',
+            stopEvent: true
+        });
+    },
+
+    _onArtifactClick: function(grid, record, dom, anon, evt) {
+        this.fireEvent('artifactClicked', evt.target.innerHTML);
     },
 
     _onRevisionClick: function(grid, record) {
         this.fireEvent('revisionClicked', record);
-    },
-
-//    _onStoreLoad: function(store) {
-//        store.each(function(record) {
-//            var rawMsg = record.get('Message');
-//            var msg = rawMsg.replace(/^.+[\+\-]\d{4}\s+/m, '');
-//            msg = msg.replace(/\s[ADRM]\s.+$/m, '');
-//            record.set('FormattedMessage', msg);
-//
-//            var auth = rawMsg.replace(/^.+Author:\s+/im, '');
-//            auth = auth.replace(/\s+Date:.+$/im, '');
-//            record.set('FormattedAuthor', auth);
-//
-//            var rawDate = record.get('CommitTimestamp');
-//            record.set('FormattedCommitTimestamp', Ext.util.Format.date(rawDate, 'Y-m-d h:i:s A'));
-//        });
-//    }
+    }
 });

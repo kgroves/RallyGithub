@@ -19,6 +19,7 @@
                     {name: 'revision', type: 'string'},
                     {name: 'url', type: 'string'},
                     {name: 'author', type: 'object'},
+                    {name: 'timestamp', type: 'date'},
                     {name: 'message', type: 'string'},
                     {name: 'tree', type: 'object'},
                     {name: 'parents', type: 'array'}
@@ -41,6 +42,7 @@
                         var commit = data.commit;
                         if (commit) {
                             Ext.apply(output, commit);
+                            output.timestamp = commit.author.date;
                         }
                         return output
                     }
@@ -53,7 +55,7 @@
             });            /**
              * Adapter classes contain methods to construct Store objects for use by ui components.
              */
-            Ext.define('changeset.adapter.Github', {
+            Ext.define('changeset.data.GithubAdapter', {
                 extend: 'Ext.util.Observable',
                 require: ['changeset.model.Changeset', 'changeset.data.GithubProxy'],
             
@@ -118,6 +120,13 @@
                     }, this, {single: true});
             
                     this._authenticate();
+                },
+            
+                /**
+                 * Return a url to the repository.
+                 */
+                getRepositorUrl: function() {
+                    return 'https://githu.com/' + this.username + '/' + this.repository;
                 },
             
                 /**
@@ -216,7 +225,7 @@
                             },
                             reader: {
                                 type: 'json',
-                                extractValues: changset.data.GithubProxy.extractCommitValues
+                                extractValues: changeset.data.GithubProxy.extractCommitValues
                             }
                         })
                     });
@@ -228,47 +237,50 @@
                 alias: 'widget.changesetgrid',
                 cls: 'changeset-grid',
             
+                /**
+                 * @cfg
+                 * Artifact type prefix regexes to match in commit messages.
+                 */
+                artifactRegexes: [
+                    /(\s+)(DE\d+)/,
+                    /(\s+)(US\d+)/,
+                    /(\s+)(TA\d+)/
+                ],
+            
                 columnCfgs: [
                     {
                         header: 'Message',
                         dataIndex: 'message',
-                        flex: 1
+                        flex: 1,
+                        renderer: function(value) {
+                            Ext.each(this.artifactRegexes, function(artifactRegex) {
+                                value = value.replace(artifactRegex, '<a href="#" class="artifact-link">$1$2</a>');
+                            });
+                            return value;
+                        }
                     },
-            //        {
-            //            header: 'Artifact',
-            //            dataIndex: 'Artifacts',
-            //            renderer: function(values) {
-            //                var detailLinks = [],
-            //                    detailLinkBuilder = Ext.create('Rally.util.DetailLinkBuilder');
-            //
-            //                Ext.each(values, function(value) {
-            //                    var href = Rally.util.Navigation.createRallyDetailUrl(value._ref, false);
-            //                    var el = '<a href="' + href + '">' + value.FormattedID + '</a>';
-            //                    detailLinks.push(el);
-            //                });
-            //
-            //                return detailLinks.join(', ');
-            //            }
-            //        },
-            //        {
-            //            header: 'Author',
-            //            dataIndex: 'FormattedAuthor',
-            //            flex: .3
-            //        },
-            //        {
-            //            header: 'Commit Time',
-            //            dataIndex: 'FormattedCommitTimestamp',
-            //            width: 140
-            //        },
-            //        {
-            //            header: 'Revision',
-            //            dataIndex: 'Revision',
-            //            renderer: function(value) {
-            //                var label = value.substring(0, 10) + '...';
-            //                return Ext.String.format('<a href="#" class="changeset-revision-link">{0}</a>', label);
-            //            },
-            //            width: 80
-            //        }
+                    {
+                        xtype: 'templatecolumn',
+                        header: 'Author',
+                        tpl: '{author.name}',
+                        flex: .3
+                    },
+                    {
+                        xtype: 'datecolumn',
+                        header: 'Commit Time',
+                        dataIndex: 'timestamp',
+                        format: 'Y-m-d h:i:s A',
+                        width: 140
+                    },
+                    {
+                        header: 'Revision',
+                        dataIndex: 'revision',
+                        renderer: function(value) {
+                            var label = value.substring(0, 12) + '...';
+                            return Ext.String.format('<a href="#" class="changeset-revision-link">{0}</a>', label);
+                        },
+                        width: 85
+                    }
                 ],
             
                 constructor: function(config) {
@@ -281,33 +293,32 @@
             
                 initComponent: function() {
                     this.callParent(arguments);
-            //        this.addEvents('revisionClicked');
-            //
-            //        this.on('itemclick', this._onRevisionClick, this, {
-            //            delegate: '.changeset-revision-link',
-            //            stopEvent: true
-            //        });
+                    this.addEvents(
+                        /**
+                         * @event
+                         * fired when a revision is clicked.
+                         */
+                        'revisionClicked',
+                        /**
+                         * @event
+                         * fired when an artifact is clicked.
+                         */
+                        'artifactClicked'
+                    );
+            
+                    this.on('itemclick', this._onArtifactClick, this, {
+                        delegate: '.artifact-link',
+                        stopEvent: true
+                    });
+                },
+            
+                _onArtifactClick: function(grid, record, dom, anon, evt) {
+                    this.fireEvent('artifactClicked', evt.target.innerHTML);
                 },
             
                 _onRevisionClick: function(grid, record) {
                     this.fireEvent('revisionClicked', record);
-                },
-            
-            //    _onStoreLoad: function(store) {
-            //        store.each(function(record) {
-            //            var rawMsg = record.get('Message');
-            //            var msg = rawMsg.replace(/^.+[\-]\d{4}\s+/m, '');
-            //            msg = msg.replace(/\s[ADRM]\s.+$/m, '');
-            //            record.set('FormattedMessage', msg);
-            //
-            //            var auth = rawMsg.replace(/^.+Author:\s+/im, '');
-            //            auth = auth.replace(/\s+Date:.+$/im, '');
-            //            record.set('FormattedAuthor', auth);
-            //
-            //            var rawDate = record.get('CommitTimestamp');
-            //            record.set('FormattedCommitTimestamp', Ext.util.Format.date(rawDate, 'Y-m-d h:i:s A'));
-            //        });
-            //    }
+                }
             });            Ext.define('changeset.ui.ChangesetBrowser', {
                 extend: 'Ext.panel.Panel',
                 alias: 'widget.changesetbrowser',
@@ -340,17 +351,35 @@
                                 store: store
                             }
                         );
-                        grid.setTitle('Change Sets');
-            
-                        grid.getStore().on('load', function() {
-                            console.log(grid.getStore());
-                        });
-            
+                        grid.setTitle('Commits');
                         grid.getStore().load();
-                        ////        this.mon(grid, 'revisionClicked', this._showRevision, this);
-            
+                        this.mon(grid, 'artifactClicked', this._showArtifact, this);
                     }, this);
-                }
+                },
+            
+                _showArtifact: function(formattedId) {
+                    Ext.data.JsonP.request({
+                        url: Rally.environment.getServer().getWsapiUrl() + '/artifact.js',
+                        method: 'GET',
+                        callbackKey: 'jsonp',
+                        params: {
+                            query: '(FormattedID = ' + formattedId + ')'
+                        },
+                        success: this._onFormattedIdLoad,
+                        scope: this
+                    });
+                },
+            
+                _onFormattedIdLoad: function(result) {
+                    if (result.QueryResult) {
+                        var results = result.QueryResult.Results;
+                        if (results && results.length) {
+                            var ref = results[0]._ref;
+                            var detailLink = Rally.util.Navigation.createRallyDetailUrl(ref);
+                            window.open(detailLink, 'detailpage');
+                        }
+                    }
+                },
             
             //    _showRevision: function(record) {
             //        if (this.items.getCount() > 1) {
@@ -368,7 +397,10 @@
                 extend: 'Rally.app.App',
                 require: ['changeset.data.GithubAdapter', 'changeset.ui.ChangesetBrowser'],
                 componentCls: 'app',
-                layout: 'fit',
+                layout: {
+                    type: 'vbox',
+                    align: 'stretch'
+                },
             
                 launch: function() {
                     var adapter = Ext.create('changeset.data.GithubAdapter');
@@ -376,6 +408,10 @@
                 },
             
                 _onAdapterInit: function(adapter) {
+                    this.add({
+                        html: 'Repository: <a href="' + adapter.getRepositoryUrl() + '">' + adapter.repository + '</a>'
+                    });
+            
                     this.add({
                         xtype: 'changesetbrowser',
                         margin: 5,

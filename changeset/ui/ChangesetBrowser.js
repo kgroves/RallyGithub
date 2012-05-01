@@ -32,10 +32,33 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             );
             grid.setTitle('Commits');
             grid.getStore().load();
-            ////        this.mon(grid, 'revisionClicked', this._showRevision, this);
-
+            this.mon(grid, 'artifactClicked', this._showArtifact, this);
         }, this);
-    }
+    },
+
+    _showArtifact: function(formattedId) {
+        Ext.data.JsonP.request({
+            url: Rally.environment.getServer().getWsapiUrl() + '/artifact.js',
+            method: 'GET',
+            callbackKey: 'jsonp',
+            params: {
+                query: '(FormattedID = ' + formattedId + ')'
+            },
+            success: this._onFormattedIdLoad,
+            scope: this
+        });
+    },
+
+    _onFormattedIdLoad: function(result) {
+        if (result.QueryResult) {
+            var results = result.QueryResult.Results;
+            if (results && results.length) {
+                var ref = results[0]._ref;
+                var detailLink = Rally.util.Navigation.createRallyDetailUrl(ref);
+                window.open(detailLink, 'detailpage');
+            }
+        }
+    },
 
 //    _showRevision: function(record) {
 //        if (this.items.getCount() > 1) {
