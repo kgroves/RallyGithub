@@ -39,7 +39,7 @@ Ext.define('changeset.data.GithubAdapter', {
      * @cfg
      * OAuth token for Github api
      */
-    authToken: 'b9cb017fd4a5ab1c722056d145689a52854d41d3',
+    authToken: '',
 
     constructor: function(config) {
         Ext.apply(this, config);
