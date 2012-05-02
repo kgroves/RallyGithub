@@ -3,6 +3,10 @@
     border: 1px solid #aaa;
 }
 
+.changeset-file-diff table .prettyprint {
+    border: 0;
+}
+
 .changeset-file-diff table {
     width: 100%;
 }

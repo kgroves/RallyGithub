@@ -3,6 +3,8 @@
     "className": "CustomApp",
     "sdk": "2.0p",
     "javascript": [
+        "js-lib/google-code-prettify/prettify.js",
+
         "changeset/model/Branch.js",
         "changeset/model/Commit.js",
         "changeset/model/ChangesetFile.js",
@@ -20,6 +22,8 @@
         "App.js"
     ],
     "css": [
+        "js-lib/google-code-prettify/prettify.css",
+
         "changeset/resources/css/changesetfilediff.css",
         "changeset/resources/css/changesetbrowser.css",
         "changeset/resources/css/changesetfilesgrid.css",

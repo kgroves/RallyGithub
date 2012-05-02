@@ -21,16 +21,17 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
                 flex: 1
             }
         ]);
-debugger;
+
         var diffLines = this.record.get('diff').split("\n");
         Ext.each(diffLines, function(line) {
-            this.add({
-                html: '<pre>'+ line +'</pre>',
+            var tableRow = this.add({
+                html: '<pre class="prettyprint">'+ line +'</pre>',
                 colspan: 3,
                 border: 0,
                 cls: this._addLineCls(line)
-            })
+            });
         }, this);
+        prettyPrint();
     },
 
     _addLineCls: function(line) {
