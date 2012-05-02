@@ -1,0 +1,19 @@
+.changeset-file-diff {
+    margin-top: 16px;
+    border: 1px solid #aaa;
+}
+
+.changeset-file-diff .x-panel-body{
+    border-color: #aaa;
+}
+
+.changeset-file-diff .x-toolbar {
+    background-color: #eee;
+    border-color: #aaa;
+}
+
+.changeset-file-diff .x-toolbar-item {
+    background: transparent;
+    font-size: 12px;
+    cursor: default;
+}

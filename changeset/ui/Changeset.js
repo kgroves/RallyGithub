@@ -46,5 +46,14 @@ Ext.define('changeset.ui.Changeset', {
                 store: store
             }
         );
+
+        store.each(function(record) {
+            this.add({
+                xtype: 'changesetfilediff',
+                margin: 10,
+                border: 0,
+                record: record
+            })
+        }, this);
     }
 });

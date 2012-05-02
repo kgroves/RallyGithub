@@ -10,6 +10,7 @@
         "changeset/data/GithubProxy.js",
         "changeset/data/GithubAdapter.js",
 
+        "changeset/ui/ChangesetFileDiff.js",
         "changeset/ui/ChangesetGrid.js",
         "changeset/ui/ChangesetFilesGrid.js",
         "changeset/ui/ChangesetSummary.js",
@@ -19,6 +20,7 @@
         "App.js"
     ],
     "css": [
+        "changeset/resources/css/changesetfilediff.css",
         "changeset/resources/css/changesetbrowser.css",
         "changeset/resources/css/changesetfilesgrid.css",
         "changeset/resources/css/changesetsummary.css",
