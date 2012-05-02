@@ -3,6 +3,10 @@
     border: 1px solid #aaa;
 }
 
+.changeset-file-diff table {
+    width: 100%;
+}
+
 .changeset-file-diff .x-panel-body{
     border-color: #aaa;
 }
@@ -16,4 +20,17 @@
     background: transparent;
     font-size: 12px;
     cursor: default;
+}
+
+.changeset-file-diff .line-add .x-panel-body,
+.changeset-file-diff .line-remove .x-panel-body {
+    background: transparent;
+}
+
+.changeset-file-diff .line-add {
+    background-color: #DFD;
+}
+
+.changeset-file-diff .line-remove {
+    background-color: #FDD;
 }
