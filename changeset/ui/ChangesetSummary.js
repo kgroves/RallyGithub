@@ -19,18 +19,18 @@ Ext.define('changeset.ui.ChangesetSummary', {
         if (!this.record) {
             return;
         }
-        
-        this.html = '<p>' + this.record.get('FormattedMessage') + '</p>';
+
+        this.html = '<p>' + this.record.get('message') + '</p>';
 
         this.getComponent('bottomToolbar').add([
             {
-                html: this.record.get('FormattedAuthor')
+                html: this.record.get('author').name
             },
             {
-                html: this.record.get('FormattedCommitTimestamp')
+                html: Ext.Date.format(new Date(this.record.get('timestamp')), 'Y-m-d h:i:s A')
             },
             {
-                html: this.record.get('Revision')
+                html: this.record.get('revision')
             }
         ]);
     }

@@ -39,7 +39,7 @@ Ext.define('changeset.data.GithubAdapter', {
      * @cfg
      * OAuth token for Github api
      */
-    authToken: '',
+    authToken: "57e6c432f1d0341be88703768399b9fb90b891f4",
 
     constructor: function(config) {
         Ext.apply(this, config);
@@ -110,6 +110,34 @@ Ext.define('changeset.data.GithubAdapter', {
     },
 
     /**
+     * Returns a store which populates changeset models.
+     */
+    getChangesetStore: function(record, callback, scope) {
+        var url = [
+            this.apiUrl,
+            'repos',
+            this.username,
+            this.repository,
+            'compare',
+            record.get('parents')[0].sha + '...' + record.get('revision')
+        ].join('/');
+
+        var store = Ext.create('Ext.data.Store', {
+            model: 'changeset.model.ChangesetFile',
+            proxy: Ext.create('changeset.data.GithubProxy', {
+                url: url,
+                reader: {
+                    type: 'json',
+                    root: 'files',
+                    extractValues: changeset.data.GithubProxy.extractChangesetFileValues
+                }
+            })
+        });
+
+        callback.call(scope, store);
+    },
+
+    /**
      * Grabs a OAuth token using the current credentials.
      * @private
      */
@@ -176,5 +204,28 @@ Ext.define('changeset.data.GithubAdapter', {
             })
         });
         callback.call(scope, store);
+    },
+
+    _getChangeset: function(record, callback, scope) {
+        var url = [
+            this.apiUrl,
+            'repos',
+            this.username,
+            this.repository,
+            'compare',
+            record.get('parents')[0].sha + '...' + record.get('revision')
+        ].join('/');
+
+        Ext.Ajax.request({
+            url: url,
+            method: 'GET',
+            stripRallyHeaders: true,
+            jsonData: {},
+            success: function(response, opts) {
+                var data = Ext.decode(response.responseText);
+                callback.call(scope, data)
+            },
+            scope: this
+        });
     }
 });

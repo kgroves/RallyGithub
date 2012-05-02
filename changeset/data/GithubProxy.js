@@ -19,6 +19,19 @@ Ext.define('changeset.data.GithubProxy', {
                 output.timestamp = commit.author.date;
             }
             return output
+        },
+
+        extractChangesetFileValues: function(data) {
+            var output = {
+                status: data.status,
+                filename: data.filename,
+                url: data.raw_url,
+                deletions: data.deletions,
+                additions: data.additions,
+                changes: data.changes,
+                diff: data.patch
+            };
+            return output;
         }
     },
 

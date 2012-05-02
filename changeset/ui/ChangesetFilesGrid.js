@@ -5,21 +5,35 @@ Ext.define('changeset.ui.ChangesetFilesGrid', {
     storeConfig: {
         fetch: true,
         sorters: [{
-            property: 'PathAndFilename',
+            property: 'filename',
             direction: 'ASC'
         }]
     },
-    columnCfgs: [
-        {
-            dataIndex: 'Action',
-            width: 20
+    columnCfgs: [{
+        header: 'Status',
+        dataIndex: 'status',
+        renderer: function(value) {
+            return Ext.String.capitalize(value.substring(0,3));
         },
-        {
-            xtype: 'templatecolumn',
-            tpl: '<a href="{Uri}">{PathAndFilename}</a>',
-            flex: 1
-        }
-    ],
+        width: 50
+    },{
+        header: 'File',
+        xtype: 'templatecolumn',
+        tpl: '<a href="{url}">{filename}</a>',
+        flex: 1
+    },{
+        header: 'Changes',
+        dataIndex: 'changes',
+        width: 60
+    },{
+        header: 'Additions',
+        dataIndex: 'additions',
+        width: 60
+    },{
+        header: 'Deletions',
+        dataIndex: 'deletions',
+        width: 60
+    }],
 
     constructor: function(config) {
         config = config || {};
@@ -29,11 +43,5 @@ Ext.define('changeset.ui.ChangesetFilesGrid', {
         });
 
         this.callParent([config]);
-
-        this.storeConfig.filters = [{
-            property: 'changeset',
-            operator: '=',
-            value: this.record.get('_ref')
-        }];
     }
 });

@@ -5,14 +5,23 @@
     "javascript": [
         "changeset/model/Branch.js",
         "changeset/model/Commit.js",
+        "changeset/model/ChangesetFile.js",
+
         "changeset/data/GithubProxy.js",
         "changeset/data/GithubAdapter.js",
+
         "changeset/ui/ChangesetGrid.js",
+        "changeset/ui/ChangesetFilesGrid.js",
+        "changeset/ui/ChangesetSummary.js",
+        "changeset/ui/Changeset.js",
         "changeset/ui/ChangesetBrowser.js",
+
         "App.js"
     ],
     "css": [
         "changeset/resources/css/changesetbrowser.css",
+        "changeset/resources/css/changesetfilesgrid.css",
+        "changeset/resources/css/changesetsummary.css",
         "app.css"
     ]
 }

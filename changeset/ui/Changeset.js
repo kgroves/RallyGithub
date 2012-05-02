@@ -1,54 +1,43 @@
 Ext.define('changeset.ui.Changeset', {
     extend: 'Ext.panel.Panel',
-    require: ['changeset.ui.ChangesetSummary', 'changeset.adapter.CGit'],
+    require: ['changeset.ui.ChangesetSummary'],
     alias: 'widget.changeset',
     cls: 'changeset',
+
+    /**
+     * @cfg
+     * Adapter to use for retrieving data.
+     */
+    adapter: null,
 
     initComponent: function() {
         this.callParent(arguments);
         this.on('afterrender', this._onAfterRender, this, {single: true});
     },
 
-    _loadChangesetModel: function() {
-        Rally.data.ModelFactory.getModel({
-            type: 'Change',
-            success: this._onChangeModelLoad,
-            scope: this
-        });
+    _loadChangesetStore: function() {
+        this.adapter.getChangesetStore(this.record, function(store) {
+            this.mon(store, 'load', this._onChangesetStoreLoad, this, {single: true});
+            store.load();
+        }, this);
     },
 
-    _onChangeModelLoad: function(model) {
-        var grid = this.insert(1,
+    _onChangesetStoreLoad: function(store) {
+        var grid = this.insert( 1,
             {
                 xtype: 'changesetfilesgrid',
-                hideHeaders: true,
                 margin: 10,
                 border: 0,
-                model: model,
-                record: this.record
+                store: store
             }
         );
-    },
-
-    _loadRevisionDiff: function() {
-        // We intend for these adapters to be easily swappable,
-        // so they should follow the same public interface as CGit.
-        var adapter = Ext.create('changeset.adapter.CGit', {
-            revision: this.record.get('Revision'),
-            uri: this.record.get('Uri')
-        });
-        adapter.getRevisionDiff(this._onRevisionDiffLoad, this);
-    },
-
-    _onRevisionDiffLoad: function(rawDiff) {
-        console.log(rawDiff);
     },
 
     _renderChangeset: function() {
         if (!this.record) {
             return;
         }
-        
+
         this.add({
             xtype: 'changesetsummary',
             margin: 10,
@@ -56,9 +45,7 @@ Ext.define('changeset.ui.Changeset', {
             record: this.record
         });
 
-        this._loadChangesetModel();
-
-        this._loadRevisionDiff();
+        this._loadChangesetStore();
     },
 
     _onAfterRender: function() {

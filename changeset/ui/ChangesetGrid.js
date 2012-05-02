@@ -18,6 +18,7 @@ Ext.define('changeset.ui.ChangesetGrid', {
         {
             header: 'Message',
             dataIndex: 'message',
+            itemId: 'messageCol',
             flex: 1,
             renderer: function(value) {
                 Ext.each(this.artifactRegexes, function(artifactRegex) {
@@ -43,8 +44,7 @@ Ext.define('changeset.ui.ChangesetGrid', {
             header: 'Revision',
             dataIndex: 'revision',
             renderer: function(value) {
-                var label = value.substring(0, 12) + '...';
-                return Ext.String.format('<a href="#" class="changeset-revision-link">{0}</a>', label);
+                return Ext.String.format('<a href="#" class="revision-link">{0}</a>', value);
             },
             width: 85
         }
@@ -73,17 +73,21 @@ Ext.define('changeset.ui.ChangesetGrid', {
             'artifactClicked'
         );
 
-        this.on('itemclick', this._onArtifactClick, this, {
-            delegate: '.artifact-link',
-            stopEvent: true
-        });
+        this.on('render', this._onRender, this);
     },
 
-    _onArtifactClick: function(grid, record, dom, anon, evt) {
-        this.fireEvent('artifactClicked', evt.target.innerHTML);
+    _onRender: function() {
+        var el = this.getEl();
+        el.on('click', this._onArtifactClick, this, {delegate: 'a.artifact-link'});
+        el.on('click', this._onRevisionClick, this, {delegate: 'a.revision-link'});
     },
 
-    _onRevisionClick: function(grid, record) {
+    _onArtifactClick: function(event, dom, opts) {
+        this.fireEvent('artifactClicked', dom.innerHTML);
+    },
+
+    _onRevisionClick: function(event, dom) {
+        var record = this.store.findRecord('revision', dom.innerHTML);
         this.fireEvent('revisionClicked', record);
     }
 });

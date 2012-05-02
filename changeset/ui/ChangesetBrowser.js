@@ -1,7 +1,7 @@
 Ext.define('changeset.ui.ChangesetBrowser', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.changesetbrowser',
-    require: ['changeset.ui.ChangesetGrid'],
+    require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset'],
     cls: 'changeset-browser',
     layout: {
         type: 'accordion',
@@ -33,6 +33,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             grid.setTitle('Commits');
             grid.getStore().load();
             this.mon(grid, 'artifactClicked', this._showArtifact, this);
+            this.mon(grid, 'revisionClicked', this._showRevision, this);
         }, this);
     },
 
@@ -60,16 +61,17 @@ Ext.define('changeset.ui.ChangesetBrowser', {
         }
     },
 
-//    _showRevision: function(record) {
-//        if (this.items.getCount() > 1) {
-//            this.remove(this.items.getAt(1));
-//        }
-//        var revision = this.add({
-//            xtype: 'changeset',
-//            title: 'Revision: ' + record.get('Revision'),
-//            autoScroll: true,
-//            record: record
-//        });
-//        revision.expand();
-//    }
+    _showRevision: function(record) {
+        if (this.items.getCount() > 1) {
+            this.remove(this.items.getAt(1));
+        }
+        var revision = this.add({
+            xtype: 'changeset',
+            adapter: this.adapter,
+            title: 'Revision: ' + record.get('revision'),
+            autoScroll: true,
+            record: record
+        });
+        revision.expand();
+    }
 });

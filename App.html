@@ -24,6 +24,17 @@
                     {name: 'tree', type: 'object'},
                     {name: 'parents', type: 'array'}
                 ]
+            });            Ext.define('changeset.model.ChangesetFile', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'status', type: 'string'},
+                    {name: 'filename', type: 'string'},
+                    {name: 'url', type: 'string'},
+                    {name: 'deletions', type: 'integer'},
+                    {name: 'additions', type: 'integer'},
+                    {name: 'changes', type: 'integer'},
+                    {name: 'diff', type: 'string'}
+                ]
             });            Ext.define('changeset.data.GithubProxy', {
                 extend: 'Ext.data.proxy.Rest',
             
@@ -45,6 +56,19 @@
                             output.timestamp = commit.author.date;
                         }
                         return output
+                    },
+            
+                    extractChangesetFileValues: function(data) {
+                        var output = {
+                            status: data.status,
+                            filename: data.filename,
+                            url: data.raw_url,
+                            deletions: data.deletions,
+                            additions: data.additions,
+                            changes: data.changes,
+                            diff: data.patch
+                        };
+                        return output;
                     }
                 },
             
@@ -93,7 +117,7 @@
                  * @cfg
                  * OAuth token for Github api
                  */
-                authToken: 'b9cb017fd4a5ab1c722056d145689a52854d41d3',
+                authToken: "57e6c432f1d0341be88703768399b9fb90b891f4",
             
                 constructor: function(config) {
                     Ext.apply(this, config);
@@ -125,8 +149,8 @@
                 /**
                  * Return a url to the repository.
                  */
-                getRepositorUrl: function() {
-                    return 'https://githu.com/' + this.username + '/' + this.repository;
+                getRepositoryUrl: function() {
+                    return 'https://github.com/' + this.username + '/' + this.repository;
                 },
             
                 /**
@@ -161,6 +185,34 @@
                         }, this, {single: true});
                         store.load();
                     }, this);
+                },
+            
+                /**
+                 * Returns a store which populates changeset models.
+                 */
+                getChangesetStore: function(record, callback, scope) {
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this.username,
+                        this.repository,
+                        'compare',
+                        record.get('parents')[0].sha + '...' + record.get('revision')
+                    ].join('/');
+            
+                    var store = Ext.create('Ext.data.Store', {
+                        model: 'changeset.model.ChangesetFile',
+                        proxy: Ext.create('changeset.data.GithubProxy', {
+                            url: url,
+                            reader: {
+                                type: 'json',
+                                root: 'files',
+                                extractValues: changeset.data.GithubProxy.extractChangesetFileValues
+                            }
+                        })
+                    });
+            
+                    callback.call(scope, store);
                 },
             
                 /**
@@ -230,6 +282,29 @@
                         })
                     });
                     callback.call(scope, store);
+                },
+            
+                _getChangeset: function(record, callback, scope) {
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this.username,
+                        this.repository,
+                        'compare',
+                        record.get('parents')[0].sha + '...' + record.get('revision')
+                    ].join('/');
+            
+                    Ext.Ajax.request({
+                        url: url,
+                        method: 'GET',
+                        stripRallyHeaders: true,
+                        jsonData: {},
+                        success: function(response, opts) {
+                            var data = Ext.decode(response.responseText);
+                            callback.call(scope, data)
+                        },
+                        scope: this
+                    });
                 }
             });            Ext.define('changeset.ui.ChangesetGrid', {
                 extend: 'Rally.ui.grid.Grid',
@@ -251,6 +326,7 @@
                     {
                         header: 'Message',
                         dataIndex: 'message',
+                        itemId: 'messageCol',
                         flex: 1,
                         renderer: function(value) {
                             Ext.each(this.artifactRegexes, function(artifactRegex) {
@@ -276,8 +352,7 @@
                         header: 'Revision',
                         dataIndex: 'revision',
                         renderer: function(value) {
-                            var label = value.substring(0, 12) + '...';
-                            return Ext.String.format('<a href="#" class="changeset-revision-link">{0}</a>', label);
+                            return Ext.String.format('<a href="#" class="revision-link">{0}</a>', value);
                         },
                         width: 85
                     }
@@ -306,23 +381,162 @@
                         'artifactClicked'
                     );
             
-                    this.on('itemclick', this._onArtifactClick, this, {
-                        delegate: '.artifact-link',
-                        stopEvent: true
-                    });
+                    this.on('render', this._onRender, this);
                 },
             
-                _onArtifactClick: function(grid, record, dom, anon, evt) {
-                    this.fireEvent('artifactClicked', evt.target.innerHTML);
+                _onRender: function() {
+                    var el = this.getEl();
+                    el.on('click', this._onArtifactClick, this, {delegate: 'a.artifact-link'});
+                    el.on('click', this._onRevisionClick, this, {delegate: 'a.revision-link'});
                 },
             
-                _onRevisionClick: function(grid, record) {
+                _onArtifactClick: function(event, dom, opts) {
+                    this.fireEvent('artifactClicked', dom.innerHTML);
+                },
+            
+                _onRevisionClick: function(event, dom) {
+                    var record = this.store.findRecord('revision', dom.innerHTML);
                     this.fireEvent('revisionClicked', record);
+                }
+            });            Ext.define('changeset.ui.ChangesetFilesGrid', {
+                extend: 'Rally.ui.grid.Grid',
+                alias: 'widget.changesetfilesgrid',
+                cls: 'changeset-files-grid',
+                storeConfig: {
+                    fetch: true,
+                    sorters: [{
+                        property: 'filename',
+                        direction: 'ASC'
+                    }]
+                },
+                columnCfgs: [{
+                    header: 'Status',
+                    dataIndex: 'status',
+                    renderer: function(value) {
+                        return Ext.String.capitalize(value.substring(0,3));
+                    },
+                    width: 50
+                },{
+                    header: 'File',
+                    xtype: 'templatecolumn',
+                    tpl: '<a href="{url}">{filename}</a>',
+                    flex: 1
+                },{
+                    header: 'Changes',
+                    dataIndex: 'changes',
+                    width: 60
+                },{
+                    header: 'Additions',
+                    dataIndex: 'additions',
+                    width: 60
+                },{
+                    header: 'Deletions',
+                    dataIndex: 'deletions',
+                    width: 60
+                }],
+            
+                constructor: function(config) {
+                    config = config || {};
+                    Ext.applyIf(config, {
+                        columnCfgs: this.columnCfgs,
+                        storeConfig: this.storeConfig
+                    });
+            
+                    this.callParent([config]);
+                }
+            });            Ext.define('changeset.ui.ChangesetSummary', {
+                extend: 'Ext.panel.Panel',
+                alias: 'widget.changesetsummary',
+                cls: 'changeset-summary',
+                frame: true,
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    itemId: 'bottomToolbar',
+                    dock: 'bottom',
+                    border: 0
+                }],
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this._initItems();
+                },
+                
+                _initItems: function() {
+                    if (!this.record) {
+                        return;
+                    }
+            
+                    this.html = '<p>' + this.record.get('message') + '</p>';
+            
+                    this.getComponent('bottomToolbar').add([
+                        {
+                            html: this.record.get('author').name
+                        },
+                        {
+                            html: Ext.Date.format(new Date(this.record.get('timestamp')), 'Y-m-d h:i:s A')
+                        },
+                        {
+                            html: this.record.get('revision')
+                        }
+                    ]);
+                }
+            });            Ext.define('changeset.ui.Changeset', {
+                extend: 'Ext.panel.Panel',
+                require: ['changeset.ui.ChangesetSummary'],
+                alias: 'widget.changeset',
+                cls: 'changeset',
+            
+                /**
+                 * @cfg
+                 * Adapter to use for retrieving data.
+                 */
+                adapter: null,
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this.on('afterrender', this._onAfterRender, this, {single: true});
+                },
+            
+                _loadChangesetStore: function() {
+                    this.adapter.getChangesetStore(this.record, function(store) {
+                        this.mon(store, 'load', this._onChangesetStoreLoad, this, {single: true});
+                        store.load();
+                    }, this);
+                },
+            
+                _onChangesetStoreLoad: function(store) {
+                    var grid = this.insert( 1,
+                        {
+                            xtype: 'changesetfilesgrid',
+                            margin: 10,
+                            border: 0,
+                            store: store
+                        }
+                    );
+                },
+            
+                _renderChangeset: function() {
+                    if (!this.record) {
+                        return;
+                    }
+            
+                    this.add({
+                        xtype: 'changesetsummary',
+                        margin: 10,
+                        border: 0,
+                        record: this.record
+                    });
+            
+                    this._loadChangesetStore();
+                },
+            
+                _onAfterRender: function() {
+                    this._renderChangeset();
                 }
             });            Ext.define('changeset.ui.ChangesetBrowser', {
                 extend: 'Ext.panel.Panel',
                 alias: 'widget.changesetbrowser',
-                require: ['changeset.ui.ChangesetGrid'],
+                require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset'],
                 cls: 'changeset-browser',
                 layout: {
                     type: 'accordion',
@@ -354,6 +568,7 @@
                         grid.setTitle('Commits');
                         grid.getStore().load();
                         this.mon(grid, 'artifactClicked', this._showArtifact, this);
+                        this.mon(grid, 'revisionClicked', this._showRevision, this);
                     }, this);
                 },
             
@@ -381,18 +596,19 @@
                     }
                 },
             
-            //    _showRevision: function(record) {
-            //        if (this.items.getCount() > 1) {
-            //            this.remove(this.items.getAt(1));
-            //        }
-            //        var revision = this.add({
-            //            xtype: 'changeset',
-            //            title: 'Revision: ' + record.get('Revision'),
-            //            autoScroll: true,
-            //            record: record
-            //        });
-            //        revision.expand();
-            //    }
+                _showRevision: function(record) {
+                    if (this.items.getCount() > 1) {
+                        this.remove(this.items.getAt(1));
+                    }
+                    var revision = this.add({
+                        xtype: 'changeset',
+                        adapter: this.adapter,
+                        title: 'Revision: ' + record.get('revision'),
+                        autoScroll: true,
+                        record: record
+                    });
+                    revision.expand();
+                }
             });            Ext.define('CustomApp', {
                 extend: 'Rally.app.App',
                 require: ['changeset.data.GithubAdapter', 'changeset.ui.ChangesetBrowser'],
@@ -409,14 +625,17 @@
             
                 _onAdapterInit: function(adapter) {
                     this.add({
-                        html: 'Repository: <a href="' + adapter.getRepositoryUrl() + '">' + adapter.repository + '</a>'
+                        html: 'Repository: <a href="' + adapter.getRepositoryUrl() + '" target="_blank">' + adapter.repository + '</a>',
+                        margin: '5 5 0 5',
+                        border: 0
                     });
             
                     this.add({
                         xtype: 'changesetbrowser',
-                        margin: 5,
+                        margin: '0 5 5 5',
                         border: 0,
-                        adapter: adapter
+                        adapter: adapter,
+                        flex: 1
                     });
                 }
             });
@@ -430,6 +649,34 @@
     <style type="text/css">
         .changeset-browser-title .x-panel-body {
             font-size: 18px;
+        }        .changeset-files-grid .x-panel-body {
+            border-bottom: 1px solid #999;
+            border-top: 1px solid #999 !important;
+        }
+        .changeset-summary, .changeset-summary .x-panel-body {
+            background-color: #eee;
+        }
+        
+        .changeset-summary {
+            border-color: #999;
+        }
+        
+        .changeset-summary p {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .changeset-summary .x-toolbar-docked-bottom {
+            border: 0;
+            background-color: transparent;
+        }
+        
+        .changeset-summary .x-toolbar-docked-bottom .x-toolbar-item {
+            background-color: #aaa;
+        }
+        
+        .changeset-summary .x-toolbar-docked-bottom .x-toolbar-item:hover {
+            cursor: default;
         }        .app {
              /* Add app styles here */
         }
