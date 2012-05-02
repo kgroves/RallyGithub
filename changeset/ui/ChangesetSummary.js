@@ -25,11 +25,9 @@ Ext.define('changeset.ui.ChangesetSummary', {
         this.getComponent('bottomToolbar').add([
             {
                 html: this.record.get('author').name
-            },
-            {
+            },{
                 html: Ext.Date.format(new Date(this.record.get('timestamp')), 'Y-m-d h:i:s A')
-            },
-            {
+            },{
                 html: this.record.get('revision')
             }
         ]);

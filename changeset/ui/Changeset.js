@@ -12,7 +12,22 @@ Ext.define('changeset.ui.Changeset', {
 
     initComponent: function() {
         this.callParent(arguments);
-        this.on('afterrender', this._onAfterRender, this, {single: true});
+        this.on('afterrender', this._renderChangeset, this, {single: true});
+    },
+
+    _renderChangeset: function() {
+        if (!this.record) {
+            return;
+        }
+
+        this.add({
+            xtype: 'changesetsummary',
+            margin: 10,
+            border: 0,
+            record: this.record
+        });
+
+        this._loadChangesetStore();
     },
 
     _loadChangesetStore: function() {
@@ -31,24 +46,5 @@ Ext.define('changeset.ui.Changeset', {
                 store: store
             }
         );
-    },
-
-    _renderChangeset: function() {
-        if (!this.record) {
-            return;
-        }
-
-        this.add({
-            xtype: 'changesetsummary',
-            margin: 10,
-            border: 0,
-            record: this.record
-        });
-
-        this._loadChangesetStore();
-    },
-
-    _onAfterRender: function() {
-        this._renderChangeset();
     }
 });

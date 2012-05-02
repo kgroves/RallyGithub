@@ -20,7 +20,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
     },
 
     _addGrid: function() {
-        this.adapter.getCommitStore(function(store) {
+        var callback = function(store) {
             var grid = this.add(
                 {
                     xtype: 'changesetgrid',
@@ -34,7 +34,8 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             grid.getStore().load();
             this.mon(grid, 'artifactClicked', this._showArtifact, this);
             this.mon(grid, 'revisionClicked', this._showRevision, this);
-        }, this);
+        };
+        this.adapter.getCommitStore(callback, this);
     },
 
     _showArtifact: function(formattedId) {

@@ -14,41 +14,36 @@ Ext.define('changeset.ui.ChangesetGrid', {
         /(\s+)(TA\d+)/
     ],
 
-    columnCfgs: [
-        {
-            header: 'Message',
-            dataIndex: 'message',
-            itemId: 'messageCol',
-            flex: 1,
-            renderer: function(value) {
-                Ext.each(this.artifactRegexes, function(artifactRegex) {
-                    value = value.replace(artifactRegex, '<a href="#" class="artifact-link">$1$2</a>');
-                });
-                return value;
-            }
-        },
-        {
-            xtype: 'templatecolumn',
-            header: 'Author',
-            tpl: '{author.name}',
-            flex: .3
-        },
-        {
-            xtype: 'datecolumn',
-            header: 'Commit Time',
-            dataIndex: 'timestamp',
-            format: 'Y-m-d h:i:s A',
-            width: 140
-        },
-        {
-            header: 'Revision',
-            dataIndex: 'revision',
-            renderer: function(value) {
-                return Ext.String.format('<a href="#" class="revision-link">{0}</a>', value);
-            },
-            width: 85
+    columnCfgs: [{
+        header: 'Message',
+        dataIndex: 'message',
+        itemId: 'messageCol',
+        flex: 1,
+        renderer: function(value) {
+            Ext.each(this.artifactRegexes, function(artifactRegex) {
+                value = value.replace(artifactRegex, '<a href="#" class="artifact-link">$1$2</a>');
+            });
+            return value;
         }
-    ],
+    },{
+        xtype: 'templatecolumn',
+        header: 'Author',
+        tpl: '{author.name}',
+        flex: .3
+    },{
+        xtype: 'datecolumn',
+        header: 'Commit Time',
+        dataIndex: 'timestamp',
+        format: 'Y-m-d h:i:s A',
+        width: 140
+    },{
+        header: 'Revision',
+        dataIndex: 'revision',
+        renderer: function(value) {
+            return Ext.String.format('<a href="#" class="revision-link">{0}</a>', value);
+        },
+        width: 85
+    }],
 
     constructor: function(config) {
         config = config || {};
