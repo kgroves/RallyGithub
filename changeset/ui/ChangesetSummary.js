@@ -22,7 +22,17 @@ Ext.define('changeset.ui.ChangesetSummary', {
 
         this.html = '<p>' + this.record.get('message') + '</p>';
 
-        this.getComponent('bottomToolbar').add([
+        var toolbar = this.getComponent('bottomToolbar');
+        if (!Ext.isEmpty(this.record.get('avatarUrl'))) {
+            toolbar.add([{
+               xtype: 'changesetavatar',
+               record: this.record,
+               width: 40,
+               height: 40,
+               margin: '2 6 2 2'
+           }]);
+        };
+        toolbar.add([
             {
                 html: this.record.get('author').name
             },{

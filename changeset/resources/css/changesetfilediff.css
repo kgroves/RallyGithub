@@ -11,11 +11,13 @@
     width: 100%;
 }
 
-.changeset-file-diff tr td,.changeset-file-diff tr th {
+.changeset-file-diff tr td, .changeset-file-diff tr th {
     padding: 2px;
+    font-size: 10px;
 }
 
 .changeset-file-diff tr th {
+    text-align: right;
     background-color: #eee;
     border-right: 1px solid #aaa;
     width: 35px;
@@ -32,7 +34,7 @@
 
 .changeset-file-diff .x-toolbar-item {
     background: transparent;
-    font-size: 12px;
+    font-size: 16px;
     cursor: default;
 }
 

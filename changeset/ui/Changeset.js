@@ -32,6 +32,10 @@ Ext.define('changeset.ui.Changeset', {
 
     _loadChangesetStore: function() {
         this.adapter.getChangesetStore(this.record, function(store) {
+            if (!store) {
+                return;
+            }
+
             this.mon(store, 'load', this._onChangesetStoreLoad, this, {single: true});
             this.up('panel').setLoading(true, true);
             store.load();

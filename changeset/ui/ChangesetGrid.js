@@ -35,7 +35,7 @@ Ext.define('changeset.ui.ChangesetGrid', {
         header: 'Commit Time',
         dataIndex: 'timestamp',
         format: 'Y-m-d h:i:s A',
-        width: 140
+        width: 160
     },{
         header: 'Revision',
         dataIndex: 'revision',

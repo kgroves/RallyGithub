@@ -10,6 +10,7 @@ Ext.define('changeset.data.GithubProxy', {
                 revision: data.sha,
                 url: data.url,
                 author: data.author,
+                avatarUrl: data.author ? data.author.avatar_url : null,
                 parents: data.parents
             };
 

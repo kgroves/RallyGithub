@@ -18,6 +18,7 @@
 
 .changeset-summary .x-toolbar-docked-bottom .x-toolbar-item {
     background-color: #aaa;
+    font-size: 12px;
 }
 
 .changeset-summary .x-toolbar-docked-bottom .x-toolbar-item:hover {

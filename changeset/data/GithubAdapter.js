@@ -113,6 +113,11 @@ Ext.define('changeset.data.GithubAdapter', {
      * Returns a store which populates changeset models.
      */
     getChangesetStore: function(record, callback, scope) {
+        if (record.get('parents').length < 1) {
+            callback.call(scope, null);
+            return;
+        }
+
         var url = [
             this.apiUrl,
             'repos',

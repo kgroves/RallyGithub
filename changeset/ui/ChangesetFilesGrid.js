@@ -29,15 +29,15 @@ Ext.define('changeset.ui.ChangesetFilesGrid', {
     },{
         header: 'Changes',
         dataIndex: 'changes',
-        width: 60
+        width: 65
     },{
         header: 'Additions',
         dataIndex: 'additions',
-        width: 60
+        width: 65
     },{
         header: 'Deletions',
         dataIndex: 'deletions',
-        width: 60
+        width: 65
     }],
 
     constructor: function(config) {

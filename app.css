@@ -1,3 +1,12 @@
-.app {
-     /* Add app styles here */
+.app .x-panel-body-default {
+    font-size: 14px;
+}
+
+.app .x-panel-header-text {
+    font-size: 14px;
+}
+
+.app .x-grid-cell-inner, .app .x-column-header-text {
+    margin: 4px 2px;
+    font-size: 12px;
 }

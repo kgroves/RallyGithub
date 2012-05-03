@@ -12,6 +12,7 @@
         "changeset/data/GithubProxy.js",
         "changeset/data/GithubAdapter.js",
 
+        "changeset/ui/Avatar.js",
         "changeset/ui/ChangesetFileDiff.js",
         "changeset/ui/ChangesetGrid.js",
         "changeset/ui/ChangesetFilesGrid.js",
