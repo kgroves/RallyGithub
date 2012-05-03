@@ -24,73 +24,70 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
             }
         ]);
 
+        this.add({
+            html: this._renderSourceTable()
+        });
+    },
+
+    _renderSourceTable: function() {
         var diffLines = this.record.get('diff').split("\n");
-        var lineNumbers;
+        var lineDetails;
+        var tableBody = ['<table><tbody>'];
         Ext.each(diffLines, function(line) {
-            lineNumbers = this._getLineNumbers(line, lineNumbers);
-
-            this.add([
-            {
-                html: lineNumbers.oldLineSymbol
-            },{
-                html: lineNumbers.newLineSymbol
-            },{
-                html: '<pre class="prettyprint">'+ line +'</pre>',
-                colspan: 3,
-                border: 0,
-                cls: this._addLineCls(line)
-            }]);
+            lineDetails = this._getLineDetails(line, lineDetails);
+            var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
+            row.push(Ext.String.format('<td>{0}</td>', lineDetails.oldLineSymbol));
+            row.push(Ext.String.format('<td>{0}</td>', lineDetails.newLineSymbol));
+            row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
+                Ext.htmlEncode(line)));
+            row.push('</tr>');
+            tableBody.push(row.join(''));
         }, this);
-        prettyPrint();
+        tableBody.push('</tbody></table>');
+        return tableBody.join("\n");
     },
 
-    _addLineCls: function(line) {
-        var lineType = this._getLineType(line);
-        if( lineType === '+' ) {
-            return 'line-add';
-        } else if( lineType === '-' ) {
-            return 'line-remove';
-        } else {
-            return null;
-        }
-    },
-
-    _getLineNumbers: function(line, lineNumbers) {
+    _getLineDetails: function(line, lineDetails) {
         var diffMatch = this.unifiedDiffRegex.exec(line);
         if (diffMatch) {
-            lineNumbers = {
+            lineDetails = {
                 oldLineNumber: parseInt(diffMatch[1], 10),
                 newLineNumber: parseInt(diffMatch[3], 10),
                 oldLineSymbol: 'old',
-                newLineSymbol: 'new'
+                newLineSymbol: 'new',
+                lineCls: 'diff'
             }
         } else {
             var lineType = this._getLineType(line);
             if (lineType === '+') {
-                this._incrementLineNumber(lineNumbers, false, true);
+                this._getChangeDetail(lineDetails, false, true);
             } else if (lineType === '-') {
-                this._incrementLineNumber(lineNumbers, true, false);
+                this._getChangeDetail(lineDetails, true, false);
             } else {
-                this._incrementLineNumber(lineNumbers, true, true);
+                this._getChangeDetail(lineDetails, true, true);
             }
         }
 
-        return lineNumbers;
+        return lineDetails;
     },
 
-    _incrementLineNumber: function(lineNumbers, incrementOld, incrementNew) {
+    _getChangeDetail: function(lineDetails, incrementOld, incrementNew) {
+        lineDetails.lineCls = 'line-equal';
+
         if (incrementOld) {
-            lineNumbers.oldLineSymbol = lineNumbers.oldLineNumber.toString();
-            lineNumbers.oldLineNumber++;
+            lineDetails.oldLineSymbol = lineDetails.oldLineNumber.toString();
+            lineDetails.oldLineNumber++;
         } else {
-            lineNumbers.oldLineSymbol = '+';
+            lineDetails.oldLineSymbol = '+';
+            lineDetails.lineCls = 'line-add';
         }
 
         if (incrementNew) {
-            lineNumbers.newLineSymbol = lineNumbers.newLineNumber.toString();
-            lineNumbers.newLineNumber++;
+            lineDetails.newLineSymbol = lineDetails.newLineNumber.toString();
+            lineDetails.newLineNumber++;
         } else {
-            lineNumbers.newLineSymbol = '-';
+            lineDetails.newLineSymbol = '-';
+            lineDetails.lineCls = 'line-remove';
         }
     },
 
