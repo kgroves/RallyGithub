@@ -33,6 +33,7 @@ Ext.define('changeset.ui.Changeset', {
     _loadChangesetStore: function() {
         this.adapter.getChangesetStore(this.record, function(store) {
             this.mon(store, 'load', this._onChangesetStoreLoad, this, {single: true});
+            this.up('panel').setLoading(true, true);
             store.load();
         }, this);
     },
@@ -47,13 +48,29 @@ Ext.define('changeset.ui.Changeset', {
             }
         );
 
+        var addedCount = 0;
         store.each(function(record) {
-            this.add({
-                xtype: 'changesetfilediff',
-                margin: 10,
-                border: 0,
-                record: record
-            })
+            var task = new Ext.util.DelayedTask(function() {
+                this.add({
+                    xtype: 'changesetfilediff',
+                    margin: 10,
+                    border: 0,
+                    record: record,
+                    listeners: {
+                        added: {
+                            fn: function() {
+                                addedCount++;
+                                if (addedCount === store.count()) {
+                                    this.up('panel').setLoading(false);
+                                }
+                            },
+                            single: true
+                        },
+                        scope: this
+                    }
+                });
+            }, this);
+            task.delay(10);
         }, this);
     }
 });
