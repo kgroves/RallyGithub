@@ -13,6 +13,8 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         border: 0
     }],
 
+    unifiedDiffRegex: /^@@\s\-(\d+)(,\d+)?\s\+(\d+)(,\d+)?\s@@/,
+
     initComponent: function() {
         this.callParent(arguments);
         this.getComponent('topToolbar').add([
@@ -23,25 +25,83 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         ]);
 
         var diffLines = this.record.get('diff').split("\n");
+        var lineNumbers;
         Ext.each(diffLines, function(line) {
-            var tableRow = this.add({
+            lineNumbers = this._getLineNumbers(line, lineNumbers);
+
+            this.add([
+            {
+                html: lineNumbers.oldLineSymbol
+            },{
+                html: lineNumbers.newLineSymbol
+            },{
                 html: '<pre class="prettyprint">'+ line +'</pre>',
                 colspan: 3,
                 border: 0,
                 cls: this._addLineCls(line)
-            });
+            }]);
         }, this);
         prettyPrint();
     },
 
     _addLineCls: function(line) {
-        var marker = line.substring(0,1);
-        if( marker === '+' ) {
+        var lineType = this._getLineType(line);
+        if( lineType === '+' ) {
             return 'line-add';
-        } else if( marker === '-' ) {
+        } else if( lineType === '-' ) {
             return 'line-remove';
         } else {
             return null;
         }
+    },
+
+    _getLineNumbers: function(line, lineNumbers) {
+        var diffMatch = this.unifiedDiffRegex.exec(line);
+        if (diffMatch) {
+            lineNumbers = {
+                oldLineNumber: parseInt(diffMatch[1], 10),
+                newLineNumber: parseInt(diffMatch[3], 10),
+                oldLineSymbol: 'old',
+                newLineSymbol: 'new'
+            }
+        } else {
+            var lineType = this._getLineType(line);
+            if (lineType === '+') {
+                this._incrementLineNumber(lineNumbers, false, true);
+            } else if (lineType === '-') {
+                this._incrementLineNumber(lineNumbers, true, false);
+            } else {
+                this._incrementLineNumber(lineNumbers, true, true);
+            }
+        }
+
+        return lineNumbers;
+    },
+
+    _incrementLineNumber: function(lineNumbers, incrementOld, incrementNew) {
+        if (incrementOld) {
+            lineNumbers.oldLineSymbol = lineNumbers.oldLineNumber.toString();
+            lineNumbers.oldLineNumber++;
+        } else {
+            lineNumbers.oldLineSymbol = '+';
+        }
+
+        if (incrementNew) {
+            lineNumbers.newLineSymbol = lineNumbers.newLineNumber.toString();
+            lineNumbers.newLineNumber++;
+        } else {
+            lineNumbers.newLineSymbol = '-';
+        }
+    },
+
+    _getLineType: function(line) {
+        var marker = line.substring(0,1);
+        if (marker === '+') {
+            return marker;
+        } else if (marker === '-') {
+            return marker;
+        }
+
+        return '=';
     }
 });
