@@ -11,13 +11,23 @@
     width: 100%;
 }
 
+.changeset-file-diff tr td,.changeset-file-diff tr th {
+    padding: 2px;
+}
+
+.changeset-file-diff tr th {
+    background-color: #eee;
+    border-right: 1px solid #aaa;
+    width: 35px;
+}
+
 .changeset-file-diff .x-panel-body{
-    border-color: #aaa;
+    border: 0;
+    border-top: 1px solid #aaa;
 }
 
 .changeset-file-diff .x-toolbar {
     background-color: #eee;
-    border-color: #aaa;
 }
 
 .changeset-file-diff .x-toolbar-item {
@@ -31,10 +41,14 @@
     background: transparent;
 }
 
-.changeset-file-diff .line-add {
+.changeset-file-diff .line-add, .changeset-file-diff .line-add th {
     background-color: #DFD;
 }
 
-.changeset-file-diff .line-remove {
+.changeset-file-diff .line-remove, .changeset-file-diff .line-remove th {
     background-color: #FDD;
+}
+
+.changeset-file-diff .line-diff, .changeset-file-diff .line-diff th {
+    background-color: #DDF;
 }

@@ -2,15 +2,11 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.changesetfilediff',
     cls: 'changeset-file-diff',
-    layout: {
-        type: 'table',
-        columns: 3
-    },
+    bodyBorder: false,
     dockedItems: [{
         xtype: 'toolbar',
         itemId: 'topToolbar',
-        dock: 'top',
-        border: 0
+        dock: 'top'
     }],
 
     unifiedDiffRegex: /^@@\s\-(\d+)(,\d+)?\s\+(\d+)(,\d+)?\s@@/,
@@ -31,13 +27,16 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
 
     _renderSourceTable: function() {
         var diffLines = this.record.get('diff').split("\n");
+        if (diffLines[diffLines.length - 1] === "\\ No newline at end of file") {
+            diffLines.pop();
+        }
         var lineDetails;
         var tableBody = ['<table><tbody>'];
         Ext.each(diffLines, function(line) {
             lineDetails = this._getLineDetails(line, lineDetails);
             var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
-            row.push(Ext.String.format('<td>{0}</td>', lineDetails.oldLineSymbol));
-            row.push(Ext.String.format('<td>{0}</td>', lineDetails.newLineSymbol));
+            row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
+            row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
             row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
                 Ext.htmlEncode(line)));
             row.push('</tr>');
@@ -55,7 +54,7 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
                 newLineNumber: parseInt(diffMatch[3], 10),
                 oldLineSymbol: 'old',
                 newLineSymbol: 'new',
-                lineCls: 'diff'
+                lineCls: 'line-diff'
             }
         } else {
             var lineType = this._getLineType(line);
