@@ -19,8 +19,13 @@ Ext.define('changeset.ui.ChangesetFilesGrid', {
     },{
         header: 'File',
         xtype: 'templatecolumn',
-        tpl: '<a href="{url}">{filename}</a>',
-        flex: 1
+        tpl: '<a href="#" class="file-name">{filename}</a>',
+        flex: 1,
+        listeners: {
+            click: function(target, dom, index) {
+                Ext.query('.changeset-file-diff')[index].scrollIntoView();
+            }
+        }
     },{
         header: 'Changes',
         dataIndex: 'changes',
@@ -44,4 +49,6 @@ Ext.define('changeset.ui.ChangesetFilesGrid', {
 
         this.callParent([config]);
     }
+
+
 });
