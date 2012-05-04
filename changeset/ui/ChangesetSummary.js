@@ -25,11 +25,13 @@ Ext.define('changeset.ui.ChangesetSummary', {
         var toolbar = this.getComponent('bottomToolbar');
         if (!Ext.isEmpty(this.record.get('avatarUrl'))) {
             toolbar.add([{
-               xtype: 'changesetavatar',
-               record: this.record,
-               width: 40,
-               height: 40,
-               margin: '2 6 2 2'
+               margin: '2 6 2 2',
+               items: [{
+                   xtype: 'changesetavatar',
+                   record: this.record,
+                   width: 40,
+                   height: 40
+               }]
            }]);
         };
         toolbar.add([
