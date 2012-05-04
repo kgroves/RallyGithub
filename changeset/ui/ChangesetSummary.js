@@ -26,14 +26,13 @@ Ext.define('changeset.ui.ChangesetSummary', {
         if (!Ext.isEmpty(this.record.get('avatarUrl'))) {
             toolbar.add([{
                margin: '2 6 2 2',
-               items: [{
-                   xtype: 'changesetavatar',
-                   record: this.record,
-                   width: 40,
-                   height: 40
-               }]
+               xtype: 'changesetavatar',
+               record: this.record,
+               width: 40,
+               height: 40
            }]);
-        };
+        }
+
         toolbar.add([
             {
                 html: this.record.get('author').name

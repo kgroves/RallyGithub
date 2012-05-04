@@ -2,38 +2,48 @@
  * Adapter classes contain methods to construct Store objects for use by ui components.
  */
 Ext.define('changeset.data.GithubAdapter', {
-    extend: 'Ext.util.Observable',
     require: ['changeset.model.Changeset', 'changeset.data.GithubProxy'],
+    mixins: {
+        observable: 'Ext.util.Observable',
+        stateful: 'Ext.state.Stateful'
+    },
 
     /**
      * @cfg
      * Github username
      */
-    username: '',
+    username: null,
 
     /**
      * @cfg
      * Github repository name
      */
-    repository: 'RallyGithub',
+    repository: null,
 
     /**
      * @cfg
      * OAuth token for Github api
      */
-    authToken: '',
+    authToken: null,
 
     /**
      * @cfg
      * Branch to grab commits from
      */
-    branch: 'master',
+    branch: null,
 
     /**
      * @cfg
      * Base url for all Github api requests.
      */
     apiUrl: 'https://api.github.com',
+
+    /**
+     * stateful configs
+     */
+    stateful: true,
+    stateEvents: ['ready', 'statechange'],
+    stateId: window.location.href + 'githubAdapter',
 
     constructor: function(config) {
         Ext.apply(this, config);
@@ -48,23 +58,32 @@ Ext.define('changeset.data.GithubAdapter', {
              * @event
              * Fired when the adapter needs authentication.
              */
-            'authenticationrequired'
+            'authenticationrequired',
+            /**
+             * @event
+             * Fired when the state needs to be saved.
+             */
+            'statechange'
         );
 
-        this.callParent(arguments);
+        this.mixins.observable.constructor.apply(this, arguments);
+        this.mixins.stateful.constructor.apply(this, arguments);
 
         Ext.Ajax.on('beforerequest', this._onBeforeAjaxRequest, this);
+
+        this._init();
     },
 
     /**
-     * Initializes the adapter.
+     * Get current state.
      */
-    init: function() {
-        if (!Ext.isEmpty(this.authToken)) {
-            this.fireEvent('ready', this);
-        } else {
-            this.fireEvent('authenticationrequired', this);
-        }
+    getState: function() {
+        return {
+            username: this.username,
+            authToken: this.authToken,
+            repository: this.repository,
+            branch: this.branch
+        };
     },
 
     /**
@@ -78,7 +97,58 @@ Ext.define('changeset.data.GithubAdapter', {
      * Return a url to the repository.
      */
     getRepositoryUrl: function() {
-        return 'https://github.com/' + this.username + '/' + this.repository;
+        return 'https://github.com/' + this._getRepoPath();
+    },
+
+    /*
+     * Gets the currently selected repository.
+     */
+    getRepository: function() {
+        return this.repository;
+    },
+
+    /*
+     * Set the repository to fetch data from.
+     */
+    setRepository: function(repository) {
+        this.repository = repository.raw;
+        this.branch = null;
+        this.fireEvent('statechange', this);
+    },
+
+    /*
+     * Gets the currently selected branch.
+     */
+    getBranch: function() {
+        return this.branch;
+    },
+
+    /*
+     * Set the branch to fetch data from.
+     */
+    setBranch: function(branch) {
+        this.branch = branch.raw;
+        this.fireEvent('statechange', this);
+    },
+
+    /**
+     * Constructs a store which populates repository models.
+     */
+    getRepositoryStore: function(callback, scope) {
+        var url = [
+            this.apiUrl,
+            'user',
+            'repos'
+        ].join('/');
+
+        var store = Ext.create('Ext.data.Store', {
+            model: 'changeset.model.Repository',
+            proxy: Ext.create('changeset.data.GithubProxy', {
+                url: url
+            })
+        });
+
+        callback.call(scope, store);
     },
 
     /**
@@ -88,8 +158,7 @@ Ext.define('changeset.data.GithubAdapter', {
         var url = [
             this.apiUrl,
             'repos',
-            this.username,
-            this.repository,
+            this._getRepoPath(),
             'branches'
         ].join('/');
 
@@ -127,8 +196,7 @@ Ext.define('changeset.data.GithubAdapter', {
         var url = [
             this.apiUrl,
             'repos',
-            this.username,
-            this.repository,
+            this._getRepoPath(),
             'compare',
             record.get('parents')[0].sha + '...' + record.get('revision')
         ].join('/');
@@ -184,6 +252,7 @@ Ext.define('changeset.data.GithubAdapter', {
         this.branch = null;
         this.username = null;
         this.authToken = null;
+        Ext.state.Manager.getProvider().clear(this.getStateId());
         this.fireEvent('authenticationrequired', this);
     },
 
@@ -197,6 +266,21 @@ Ext.define('changeset.data.GithubAdapter', {
         }
     },
 
+    _getRepoPath: function() {
+        return this.repository.owner.login + '/' + this.repository.name
+    },
+
+    /**
+     * Initializes the adapter.
+     */
+    _init: function() {
+        if (!Ext.isEmpty(this.authToken)) {
+            this.fireEvent('ready', this);
+        } else {
+            this.fireEvent('authenticationrequired', this);
+        }
+    },
+
     _onBeforeAjaxRequest: function(ext, opts) {
         this._stripRallyHeaders(opts);
         if (!opts.headers.hasOwnProperty('Authorization')) {
@@ -205,13 +289,10 @@ Ext.define('changeset.data.GithubAdapter', {
     },
 
     _onBranchLoad: function(store, callback, scope) {
-        var branch = store.findRecord('name', this.branch);
-
         var url = [
             this.apiUrl,
             'repos',
-            this.username,
-            this.repository,
+            this._getRepoPath(),
             'commits'
         ].join('/');
 
@@ -220,7 +301,7 @@ Ext.define('changeset.data.GithubAdapter', {
             proxy: Ext.create('changeset.data.GithubProxy', {
                 url: url,
                 extraParams: {
-                    sha: branch.get('commit').sha
+                    sha: this.branch.commit.sha
                 },
                 reader: {
                     type: 'json',
@@ -235,8 +316,7 @@ Ext.define('changeset.data.GithubAdapter', {
         var url = [
             this.apiUrl,
             'repos',
-            this.username,
-            this.repository,
+            this._getRepoPath(),
             'compare',
             record.get('parents')[0].sha + '...' + record.get('revision')
         ].join('/');

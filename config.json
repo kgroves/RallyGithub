@@ -8,6 +8,7 @@
         "changeset/model/Branch.js",
         "changeset/model/Commit.js",
         "changeset/model/ChangesetFile.js",
+        "changeset/model/Repository.js",
 
         "changeset/data/GithubProxy.js",
         "changeset/data/GithubAdapter.js",
