@@ -9,19 +9,19 @@ Ext.define('changeset.data.GithubAdapter', {
      * @cfg
      * Github username
      */
-    username: 'rally-dthompson',
-
-    /**
-     * @cfg
-     * Github password
-     */
-    password: '',
+    username: '',
 
     /**
      * @cfg
      * Github repository name
      */
     repository: 'RallyGithub',
+
+    /**
+     * @cfg
+     * OAuth token for Github api
+     */
+    authToken: '',
 
     /**
      * @cfg
@@ -35,12 +35,6 @@ Ext.define('changeset.data.GithubAdapter', {
      */
     apiUrl: 'https://api.github.com',
 
-    /**
-     * @cfg
-     * OAuth token for Github api
-     */
-    authToken: "57e6c432f1d0341be88703768399b9fb90b891f4",
-
     constructor: function(config) {
         Ext.apply(this, config);
 
@@ -49,7 +43,12 @@ Ext.define('changeset.data.GithubAdapter', {
              * @event
              * Fired when the adapter is ready to be used.
              */
-            'ready'
+            'ready',
+            /**
+             * @event
+             * Fired when the adapter needs authentication.
+             */
+            'authenticationrequired'
         );
 
         this.callParent(arguments);
@@ -60,12 +59,19 @@ Ext.define('changeset.data.GithubAdapter', {
     /**
      * Initializes the adapter.
      */
-    init: function(callback, scope) {
-        this.on('ready', function() {
-            callback.call(scope, this);
-        }, this, {single: true});
+    init: function() {
+        if (!Ext.isEmpty(this.authToken)) {
+            this.fireEvent('ready', this);
+        } else {
+            this.fireEvent('authenticationrequired', this);
+        }
+    },
 
-        this._authenticate();
+    /**
+     * Get an appropriate login message
+     */
+    getLoginMessage: function() {
+        return 'Login to your GitHub account';
     },
 
     /**
@@ -143,16 +149,13 @@ Ext.define('changeset.data.GithubAdapter', {
     },
 
     /**
-     * Grabs a OAuth token using the current credentials.
-     * @private
+     * Grabs an OAuth token using the passed credentials.
+     * If this is successful, it will fire the 'ready' event,
+     * if it fails, it will refire 'authenticationrequired'.
      */
-    _authenticate: function() {
-        if (!Ext.isEmpty(this.authToken)) {
-            this.fireEvent('ready', this);
-            return;
-        }
-
-        var encodedAuth = 'Basic ' + btoa(this.username + ':' + this.password);
+    authenticate: function(username, password) {
+        this.username = username;
+        var encodedAuth = 'Basic ' + btoa(this.username + ':' + password);
         Ext.Ajax.request({
             url: this.apiUrl + '/authorizations',
             method: 'POST',
@@ -166,8 +169,22 @@ Ext.define('changeset.data.GithubAdapter', {
                 this.authToken = data.token;
                 this.fireEvent('ready', this);
             },
+            failure: function(response, opts) {
+                this.fireEvent('authenticationrequired', this);
+            },
             scope: this
         });
+    },
+
+    /**
+     * Logs user out of github api.
+     */
+    logout: function() {
+        this.repository = null;
+        this.branch = null;
+        this.username = null;
+        this.authToken = null;
+        this.fireEvent('authenticationrequired', this);
     },
 
     /**
@@ -182,6 +199,9 @@ Ext.define('changeset.data.GithubAdapter', {
 
     _onBeforeAjaxRequest: function(ext, opts) {
         this._stripRallyHeaders(opts);
+        if (!opts.headers.hasOwnProperty('Authorization')) {
+            opts.headers["Authorization"] = 'token ' + this.authToken;
+        }
     },
 
     _onBranchLoad: function(store, callback, scope) {

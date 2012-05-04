@@ -61,7 +61,7 @@ Ext.define('changeset.ui.Changeset', {
                     border: 0,
                     record: record,
                     listeners: {
-                        added: {
+                        afterrender: {
                             fn: function() {
                                 addedCount++;
                                 if (addedCount === store.count()) {

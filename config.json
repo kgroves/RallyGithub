@@ -13,6 +13,7 @@
         "changeset/data/GithubAdapter.js",
 
         "changeset/ui/Avatar.js",
+        "changeset/ui/Login.js",
         "changeset/ui/ChangesetFileDiff.js",
         "changeset/ui/ChangesetGrid.js",
         "changeset/ui/ChangesetFilesGrid.js",
@@ -26,6 +27,7 @@
         "js-lib/google-code-prettify/prettify.css",
 
         "changeset/resources/css/changesetfilediff.css",
+        "changeset/resources/css/changesetlogin.css",
         "changeset/resources/css/changesetbrowser.css",
         "changeset/resources/css/changesetfilesgrid.css",
         "changeset/resources/css/changesetsummary.css",

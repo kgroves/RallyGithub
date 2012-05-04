@@ -13,9 +13,20 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
 
     initComponent: function() {
         this.callParent(arguments);
+        var link = Ext.String.format('<a href="{0}" class="changeset-file">{1}</a>',
+            this.record.get('url'), this.record.get('filename'));
         this.getComponent('topToolbar').add([
             {
-                html: this.record.get('filename'),
+                html: link,
+                listeners: {
+                    afterrender: function(cmp) {
+                        cmp.getEl().down('.changeset-file').on('click', function(evt) {
+                            evt.stopEvent();
+                            window.open(this.record.get('url'), 'changesetFile');
+                        }, this);
+                    },
+                    scope: this
+                },
                 flex: 1
             }
         ]);

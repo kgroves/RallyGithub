@@ -8,16 +8,14 @@ Ext.define('CustomApp', {
     },
 
     launch: function() {
-        var adapter = Ext.create('changeset.data.GithubAdapter');
-        adapter.init(this._onAdapterInit, this);
+        this.adapter = Ext.create('changeset.data.GithubAdapter');
+        this.mon(this.adapter, 'ready', this._onAdapterReady, this);
+        this.mon(this.adapter, 'authenticationrequired', this._onAuthenticationRequired, this);
+        this.adapter.init();
     },
 
-    _onAdapterInit: function(adapter) {
-        this.add({
-            html: 'Repository: <a href="' + adapter.getRepositoryUrl() + '" target="_blank">' + adapter.repository + '</a>',
-            margin: '5 5 0 5',
-            border: 0
-        });
+    _onAdapterReady: function(adapter) {
+        this.removeAll();
 
         this.add({
             xtype: 'changesetbrowser',
@@ -25,6 +23,20 @@ Ext.define('CustomApp', {
             border: 0,
             adapter: adapter,
             flex: 1
+        });
+    },
+
+    _onAuthenticationRequired: function(adapter) {
+        this.removeAll();
+        this.add({
+            flex: 1,
+            border: 0,
+            adapter: this.adapter,
+            items: [{
+                xtype: 'changesetlogin',
+                border: 0,
+                adapter: adapter
+            }]
         });
     }
 });

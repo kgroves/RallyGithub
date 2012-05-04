@@ -3,6 +3,9 @@ Ext.define('changeset.ui.ChangesetBrowser', {
     alias: 'widget.changesetbrowser',
     require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset'],
     cls: 'changeset-browser',
+    border: 0,
+    bodyBorder: false,
+
     layout: {
         type: 'accordion',
         animate: true
@@ -16,7 +19,32 @@ Ext.define('changeset.ui.ChangesetBrowser', {
 
     initComponent: function() {
         this.callParent(arguments);
-        this._addGrid();
+        this._populateToolbar();
+//        this._addGrid();
+    },
+
+    _populateToolbar: function() {
+        this.addDocked({
+            dock: 'top',
+            border: 0,
+            padding: 5,
+            items: [
+                {
+                    xtype: 'rallybutton',
+                    text: 'Logout',
+                    handler: function() {
+                        this.adapter.logout();
+                    },
+                    scope: this
+                }
+            ]
+        });
+
+//        this.add({
+//            html: 'Repository: <a href="' + adapter.getRepositoryUrl() + '" target="_blank">' + adapter.repository + '</a>',
+//            margin: '5 5 0 5',
+//            border: 0
+//        });
     },
 
     _addGrid: function() {
