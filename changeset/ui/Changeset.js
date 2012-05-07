@@ -54,28 +54,25 @@ Ext.define('changeset.ui.Changeset', {
 
         var addedCount = 0;
         store.each(function(record) {
-            var task = new Ext.util.DelayedTask(function() {
-                this.add({
-                    xtype: 'changesetfilediff',
-                    margin: 10,
-                    border: 0,
-                    record: record,
-                    listeners: {
-                        afterrender: {
-                            fn: function() {
-                                addedCount++;
-                                if (addedCount === store.count()) {
-                                    prettyPrint();
-                                    this.up('panel').setLoading(false);
-                                }
-                            },
-                            single: true
+            this.add({
+                xtype: 'changesetfilediff',
+                margin: 10,
+                border: 0,
+                record: record,
+                listeners: {
+                    afterrender: {
+                        fn: function() {
+                            addedCount++;
+                            if (addedCount === store.count()) {
+                                prettyPrint();
+                                this.up('panel').setLoading(false);
+                            }
                         },
-                        scope: this
-                    }
-                });
-            }, this);
-            task.delay(10);
+                        single: true
+                    },
+                    scope: this
+                }
+            });
         }, this);
     }
 });
