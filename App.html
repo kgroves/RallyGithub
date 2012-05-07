@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RallyGithub</title>
+
+    <script type="text/javascript" src="/apps/2.0p/sdk.js"></script>
+
+    <script type="text/javascript">
+        Rally.onReady(function() {
+            var q=null;window.PR_SHOULD_USE_CONTINUATION=!0;
+            (function(){function L(a){function m(a){var f=a.charCodeAt(0);if(f!==92)return f;var b=a.charAt(1);return(f=r[b])?f:"0"<=b&&b<="7"?parseInt(a.substring(1),8):b==="u"||b==="x"?parseInt(a.substring(2),16):a.charCodeAt(1)}function e(a){if(a<32)return(a<16?"\x0":"\x")+a.toString(16);a=String.fromCharCode(a);if(a==="\"||a==="-"||a==="["||a==="]")a="\"+a;return a}function h(a){for(var f=a.substring(1,a.length-1).match(/\u[\dA-Fa-f]{4}|\x[\dA-Fa-f]{2}|\[0-3][0-7]{0,2}|\[0-7]{1,2}|\[\S\s]|[^\]/g),a=
+            [],b=[],o=f[0]==="^",c=o?1:0,i=f.length;c<i;++c){var j=f[c];if(/\[bdsw]/i.test(j))a.push(j);else{var j=m(j),d;c+2<i&&"-"===f[c+1]?(d=m(f[c+2]),c+=2):d=j;b.push([j,d]);d<65||j>122||(d<65||j>90||b.push([Math.max(65,j)|32,Math.min(d,90)|32]),d<97||j>122||b.push([Math.max(97,j)&-33,Math.min(d,122)&-33]))}}b.sort(function(a,f){return a[0]-f[0]||f[1]-a[1]});f=[];j=[NaN,NaN];for(c=0;c<b.length;++c)i=b[c],i[0]<=j[1]+1?j[1]=Math.max(j[1],i[1]):f.push(j=i);b=["["];o&&b.push("^");b.push.apply(b,a);for(c=0;c<
+            f.length;++c)i=f[c],b.push(e(i[0])),i[1]>i[0]&&(i[1]+1>i[0]&&b.push("-"),b.push(e(i[1])));b.push("]");return b.join("")}function y(a){for(var f=a.source.match(/\[(?:[^\\]]|\[\S\s])*]|\u[\dA-Fa-f]{4}|\x[\dA-Fa-f]{2}|\\d+|\[^\dux]|\(\?[!:=]|[()^]|[^()[\^]+/g),b=f.length,d=[],c=0,i=0;c<b;++c){var j=f[c];j==="("?++i:"\"===j.charAt(0)&&(j=+j.substring(1))&&j<=i&&(d[j]=-1)}for(c=1;c<d.length;++c)-1===d[c]&&(d[c]=++t);for(i=c=0;c<b;++c)j=f[c],j==="("?(++i,d[i]===void 0&&(f[c]="(?:")):"\"===j.charAt(0)&&
+            (j=+j.substring(1))&&j<=i&&(f[c]="\"+d[i]);for(i=c=0;c<b;++c)"^"===f[c]&&"^"!==f[c+1]&&(f[c]="");if(a.ignoreCase&&s)for(c=0;c<b;++c)j=f[c],a=j.charAt(0),j.length>=2&&a==="["?f[c]=h(j):a!=="\"&&(f[c]=j.replace(/[A-Za-z]/g,function(a){a=a.charCodeAt(0);return"["+String.fromCharCode(a&-33,a|32)+"]"}));return f.join("")}for(var t=0,s=!1,l=!1,p=0,d=a.length;p<d;++p){var g=a[p];if(g.ignoreCase)l=!0;else if(/[a-z]/i.test(g.source.replace(/\u[\da-f]{4}|\x[\da-f]{2}|\[^UXux]/gi,""))){s=!0;l=!1;break}}for(var r=
+            {b:8,t:9,n:10,v:11,f:12,r:13},n=[],p=0,d=a.length;p<d;++p){g=a[p];if(g.global||g.multiline)throw Error(""+g);n.push("(?:"+y(g)+")")}return RegExp(n.join("|"),l?"gi":"g")}function M(a){function m(a){switch(a.nodeType){case 1:if(e.test(a.className))break;for(var g=a.firstChild;g;g=g.nextSibling)m(g);g=a.nodeName;if("BR"===g||"LI"===g)h[s]="\n",t[s<<1]=y++,t[s++<<1|1]=a;break;case 3:case 4:g=a.nodeValue,g.length&&(g=p?g.replace(/\r\n?/g,"\n"):g.replace(/[\t\n\r ]+/g," "),h[s]=g,t[s<<1]=y,y+=g.length,
+            t[s++<<1|1]=a)}}var e=/(?:^|\s)nocode(?:\s|$)/,h=[],y=0,t=[],s=0,l;a.currentStyle?l=a.currentStyle.whiteSpace:window.getComputedStyle&&(l=document.defaultView.getComputedStyle(a,q).getPropertyValue("white-space"));var p=l&&"pre"===l.substring(0,3);m(a);return{a:h.join("").replace(/\n$/,""),c:t}}function B(a,m,e,h){m&&(a={a:m,d:a},e(a),h.push.apply(h,a.e))}function x(a,m){function e(a){for(var l=a.d,p=[l,"pln"],d=0,g=a.a.match(y)||[],r={},n=0,z=g.length;n<z;++n){var f=g[n],b=r[f],o=void 0,c;if(typeof b===
+            "string")c=!1;else{var i=h[f.charAt(0)];if(i)o=f.match(i[1]),b=i[0];else{for(c=0;c<t;++c)if(i=m[c],o=f.match(i[1])){b=i[0];break}o||(b="pln")}if((c=b.length>=5&&"lang-"===b.substring(0,5))&&!(o&&typeof o[1]==="string"))c=!1,b="src";c||(r[f]=b)}i=d;d+=f.length;if(c){c=o[1];var j=f.indexOf(c),k=j+c.length;o[2]&&(k=f.length-o[2].length,j=k-c.length);b=b.substring(5);B(l+i,f.substring(0,j),e,p);B(l+i+j,c,C(b,c),p);B(l+i+k,f.substring(k),e,p)}else p.push(l+i,b)}a.e=p}var h={},y;(function(){for(var e=a.concat(m),
+            l=[],p={},d=0,g=e.length;d<g;++d){var r=e[d],n=r[3];if(n)for(var k=n.length;--k>=0;)h[n.charAt(k)]=r;r=r[1];n=""+r;p.hasOwnProperty(n)||(l.push(r),p[n]=q)}l.push(/[\S\s]/);y=L(l)})();var t=m.length;return e}function u(a){var m=[],e=[];a.tripleQuotedStrings?m.push(["str",/^(?:'''(?:[^'\]|\[\S\s]|''?(?=[^']))*(?:'''|$)|"""(?:[^"\]|\[\S\s]|""?(?=[^"]))*(?:"""|$)|'(?:[^'\]|\[\S\s])*(?:'|$)|"(?:[^"\]|\[\S\s])*(?:"|$))/,q,"'\""]):a.multiLineStrings?m.push(["str",/^(?:'(?:[^'\]|\[\S\s])*(?:'|$)|"(?:[^"\]|\[\S\s])*(?:"|$)|`(?:[^\`]|\[\S\s])*(?:`|$))/,
+            q,"'\"`"]):m.push(["str",/^(?:'(?:[^\n\r'\]|\.)*(?:'|$)|"(?:[^\n\r"\]|\.)*(?:"|$))/,q,"\"'"]);a.verbatimStrings&&e.push(["str",/^@"(?:[^"]|"")*(?:"|$)/,q]);var h=a.hashComments;h&&(a.cStyleComments?(h>1?m.push(["com",/^#(?:##(?:[^#]|#(?!##))*(?:###|$)|.*)/,q,"#"]):m.push(["com",/^#(?:(?:define|elif|else|endif|error|ifdef|include|ifndef|line|pragma|undef|warning)\b|[^\n\r]*)/,q,"#"]),e.push(["str",/^<(?:(?:(?:\.\.\/)*|\/?)(?:[\w-]+(?:\/[\w-]+)+)?[\w-]+\.h|[a-z]\w*)>/,q])):m.push(["com",/^#[^\n\r]*/,
+            q,"#"]));a.cStyleComments&&(e.push(["com",/^\/\/[^\n\r]*/,q]),e.push(["com",/^\/\*[\S\s]*?(?:\*\/|$)/,q]));a.regexLiterals&&e.push(["lang-regex",/^(?:^^\.?|[!+-]|!=|!==|#|%|%=|&|&&|&&=|&=|\(|\*|\*=|=|,|-=|->|\/|\/=|:|::|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|[?@[^]|\^=|\^\^|\^\^=|{|\||\|=|\|\||\|\|=|~|break|case|continue|delete|do|else|finally|instanceof|return|throw|try|typeof)\s*(\/(?=[^*/])(?:[^/[\]|\[\S\s]|\[(?:[^\\]]|\[\S\s])*(?:]|$))+\/)/]);(h=a.types)&&e.push(["typ",h]);a=(""+a.keywords).replace(/^ | $/g,
+            "");a.length&&e.push(["kwd",RegExp("^(?:"+a.replace(/[\s,]+/g,"|")+")\b"),q]);m.push(["pln",/^\s+/,q," \r\n\t\xa0"]);e.push(["lit",/^@[$_a-z][\w$@]*/i,q],["typ",/^(?:[@_]?[A-Z]+[a-z][\w$@]*|\w+_t\b)/,q],["pln",/^[$_a-z][\w$@]*/i,q],["lit",/^(?:0x[\da-f]+|(?:\d(?:_\d+)*\d*(?:\.\d*)?|\.\d)(?:e[+-]?\d+)?)[a-z]*/i,q,"0123456789"],["pln",/^\[\S\s]?/,q],["pun",/^.[^\s\w"-$'./@\`]*/,q]);return x(m,e)}function D(a,m){function e(a){switch(a.nodeType){case 1:if(k.test(a.className))break;if("BR"===a.nodeName)h(a),
+            a.parentNode&&a.parentNode.removeChild(a);else for(a=a.firstChild;a;a=a.nextSibling)e(a);break;case 3:case 4:if(p){var b=a.nodeValue,d=b.match(t);if(d){var c=b.substring(0,d.index);a.nodeValue=c;(b=b.substring(d.index+d[0].length))&&a.parentNode.insertBefore(s.createTextNode(b),a.nextSibling);h(a);c||a.parentNode.removeChild(a)}}}}function h(a){function b(a,d){var e=d?a.cloneNode(!1):a,f=a.parentNode;if(f){var f=b(f,1),g=a.nextSibling;f.appendChild(e);for(var h=g;h;h=g)g=h.nextSibling,f.appendChild(h)}return e}
+            for(;!a.nextSibling;)if(a=a.parentNode,!a)return;for(var a=b(a.nextSibling,0),e;(e=a.parentNode)&&e.nodeType===1;)a=e;d.push(a)}var k=/(?:^|\s)nocode(?:\s|$)/,t=/\r\n?|\n/,s=a.ownerDocument,l;a.currentStyle?l=a.currentStyle.whiteSpace:window.getComputedStyle&&(l=s.defaultView.getComputedStyle(a,q).getPropertyValue("white-space"));var p=l&&"pre"===l.substring(0,3);for(l=s.createElement("LI");a.firstChild;)l.appendChild(a.firstChild);for(var d=[l],g=0;g<d.length;++g)e(d[g]);m===(m|0)&&d[0].setAttribute("value",
+            m);var r=s.createElement("OL");r.className="linenums";for(var n=Math.max(0,m-1|0)||0,g=0,z=d.length;g<z;++g)l=d[g],l.className="L"+(g+n)%10,l.firstChild||l.appendChild(s.createTextNode("\xa0")),r.appendChild(l);a.appendChild(r)}function k(a,m){for(var e=m.length;--e>=0;){var h=m[e];A.hasOwnProperty(h)?window.console&&console.warn("cannot override language handler %s",h):A[h]=a}}function C(a,m){if(!a||!A.hasOwnProperty(a))a=/^\s*</.test(m)?"default-markup":"default-code";return A[a]}function E(a){var m=
+            a.g;try{var e=M(a.h),h=e.a;a.a=h;a.c=e.c;a.d=0;C(m,h)(a);var k=/\bMSIE\b/.test(navigator.userAgent),m=/\n/g,t=a.a,s=t.length,e=0,l=a.c,p=l.length,h=0,d=a.e,g=d.length,a=0;d[g]=s;var r,n;for(n=r=0;n<g;)d[n]!==d[n+2]?(d[r++]=d[n++],d[r++]=d[n++]):n+=2;g=r;for(n=r=0;n<g;){for(var z=d[n],f=d[n+1],b=n+2;b+2<=g&&d[b+1]===f;)b+=2;d[r++]=z;d[r++]=f;n=b}for(d.length=r;h<p;){var o=l[h+2]||s,c=d[a+2]||s,b=Math.min(o,c),i=l[h+1],j;if(i.nodeType!==1&&(j=t.substring(e,b))){k&&(j=j.replace(m,"\r"));i.nodeValue=
+            j;var u=i.ownerDocument,v=u.createElement("SPAN");v.className=d[a+1];var x=i.parentNode;x.replaceChild(v,i);v.appendChild(i);e<o&&(l[h+1]=i=u.createTextNode(t.substring(b,o)),x.insertBefore(i,v.nextSibling))}e=b;e>=o&&(h+=2);e>=c&&(a+=2)}}catch(w){"console"in window&&console.log(w&&w.stack?w.stack:w)}}var v=["break,continue,do,else,for,if,return,while"],w=[[v,"auto,case,char,const,default,double,enum,extern,float,goto,int,long,register,short,signed,sizeof,static,struct,switch,typedef,union,unsigned,void,volatile"],
+            "catch,class,delete,false,import,new,operator,private,protected,public,this,throw,true,try,typeof"],F=[w,"alignof,align_union,asm,axiom,bool,concept,concept_map,const_cast,constexpr,decltype,dynamic_cast,explicit,export,friend,inline,late_check,mutable,namespace,nullptr,reinterpret_cast,static_assert,static_cast,template,typeid,typename,using,virtual,where"],G=[w,"abstract,boolean,byte,extends,final,finally,implements,import,instanceof,null,native,package,strictfp,super,synchronized,throws,transient"],
+            H=[G,"as,base,by,checked,decimal,delegate,descending,dynamic,event,fixed,foreach,from,group,implicit,in,interface,internal,into,is,lock,object,out,override,orderby,params,partial,readonly,ref,sbyte,sealed,stackalloc,string,select,uint,ulong,unchecked,unsafe,ushort,var"],w=[w,"debugger,eval,export,function,get,null,set,undefined,var,with,Infinity,NaN"],I=[v,"and,as,assert,class,def,del,elif,except,exec,finally,from,global,import,in,is,lambda,nonlocal,not,or,pass,print,raise,try,with,yield,False,True,None"],
+            J=[v,"alias,and,begin,case,class,def,defined,elsif,end,ensure,false,in,module,next,nil,not,or,redo,rescue,retry,self,super,then,true,undef,unless,until,when,yield,BEGIN,END"],v=[v,"case,done,elif,esac,eval,fi,function,in,local,set,then,until"],K=/^(DIR|FILE|vector|(de|priority_)?queue|list|stack|(const_)?iterator|(multi)?(set|map)|bitset|u?(int|float)\d*)/,N=/\S/,O=u({keywords:[F,H,w,"caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END"+
+            I,J,v],hashComments:!0,cStyleComments:!0,multiLineStrings:!0,regexLiterals:!0}),A={};k(O,["default-code"]);k(x([],[["pln",/^[^<?]+/],["dec",/^<!\w[^>]*(?:>|$)/],["com",/^<\!--[\S\s]*?(?:--\>|$)/],["lang-",/^<\?([\S\s]+?)(?:\?>|$)/],["lang-",/^<%([\S\s]+?)(?:%>|$)/],["pun",/^(?:<[%?]|[%?]>)/],["lang-",/^<xmp\b[^>]*>([\S\s]+?)<\/xmp\b[^>]*>/i],["lang-js",/^<script\b[^>]*>([\S\s]*?)(<\/script\b[^>]*>)/i],["lang-css",/^<style\b[^>]*>([\S\s]*?)(<\/style\b[^>]*>)/i],["lang-in.tag",/^(<\/?[a-z][^<>]*>)/i]]),
+            ["default-markup","htm","html","mxml","xhtml","xml","xsl"]);k(x([["pln",/^\s+/,q," \t\r\n"],["atv",/^(?:"[^"]*"?|'[^']*'?)/,q,"\"'"]],[["tag",/^^<\/?[a-z](?:[\w-.:]*\w)?|\/?>$/i],["atn",/^(?!style[\s=]|on)[a-z](?:[\w:-]*\w)?/i],["lang-uq.val",/^=\s*([^\s"'>]*(?:[^\s"'/>]|\/(?=\s)))/],["pun",/^[/<->]+/],["lang-js",/^on\w+\s*=\s*"([^"]+)"/i],["lang-js",/^on\w+\s*=\s*'([^']+)'/i],["lang-js",/^on\w+\s*=\s*([^\s"'>]+)/i],["lang-css",/^style\s*=\s*"([^"]+)"/i],["lang-css",/^style\s*=\s*'([^']+)'/i],["lang-css",
+            /^style\s*=\s*([^\s"'>]+)/i]]),["in.tag"]);k(x([],[["atv",/^[\S\s]+/]]),["uq.val"]);k(u({keywords:F,hashComments:!0,cStyleComments:!0,types:K}),["c","cc","cpp","cxx","cyc","m"]);k(u({keywords:"null,true,false"}),["json"]);k(u({keywords:H,hashComments:!0,cStyleComments:!0,verbatimStrings:!0,types:K}),["cs"]);k(u({keywords:G,cStyleComments:!0}),["java"]);k(u({keywords:v,hashComments:!0,multiLineStrings:!0}),["bsh","csh","sh"]);k(u({keywords:I,hashComments:!0,multiLineStrings:!0,tripleQuotedStrings:!0}),
+            ["cv","py"]);k(u({keywords:"caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END",hashComments:!0,multiLineStrings:!0,regexLiterals:!0}),["perl","pl","pm"]);k(u({keywords:J,hashComments:!0,multiLineStrings:!0,regexLiterals:!0}),["rb"]);k(u({keywords:w,cStyleComments:!0,regexLiterals:!0}),["js"]);k(u({keywords:"all,and,by,catch,class,else,extends,false,finally,for,if,in,is,isnt,loop,new,no,not,null,of,off,on,or,return,super,then,true,try,unless,until,when,while,yes",
+            hashComments:3,cStyleComments:!0,multilineStrings:!0,tripleQuotedStrings:!0,regexLiterals:!0}),["coffee"]);k(x([],[["str",/^[\S\s]+/]]),["regex"]);window.prettyPrintOne=function(a,m,e){var h=document.createElement("PRE");h.innerHTML=a;e&&D(h,e);E({g:m,i:e,h:h});return h.innerHTML};window.prettyPrint=function(a){function m(){for(var e=window.PR_SHOULD_USE_CONTINUATION?l.now()+250:Infinity;p<h.length&&l.now()<e;p++){var n=h[p],k=n.className;if(k.indexOf("prettyprint")>=0){var k=k.match(g),f,b;if(b=
+            !k){b=n;for(var o=void 0,c=b.firstChild;c;c=c.nextSibling)var i=c.nodeType,o=i===1?o?b:c:i===3?N.test(c.nodeValue)?b:o:o;b=(f=o===b?void 0:o)&&"CODE"===f.tagName}b&&(k=f.className.match(g));k&&(k=k[1]);b=!1;for(o=n.parentNode;o;o=o.parentNode)if((o.tagName==="pre"||o.tagName==="code"||o.tagName==="xmp")&&o.className&&o.className.indexOf("prettyprint")>=0){b=!0;break}b||((b=(b=n.className.match(/\blinenums\b(?::(\d+))?/))?b[1]&&b[1].length?+b[1]:!0:!1)&&D(n,b),d={g:k,h:n,i:b},E(d))}}p<h.length?setTimeout(m,
+            250):a&&a()}for(var e=[document.getElementsByTagName("pre"),document.getElementsByTagName("code"),document.getElementsByTagName("xmp")],h=[],k=0;k<e.length;++k)for(var t=0,s=e[k].length;t<s;++t)h.push(e[k][t]);var e=q,l=Date;l.now||(l={now:function(){return+new Date}});var p=0,d,g=/\blang(?:uage)?-([\w.]+)(?!\S)/;m()};window.PR={createSimpleLexer:x,registerLangHandler:k,sourceDecorator:u,PR_ATTRIB_NAME:"atn",PR_ATTRIB_VALUE:"atv",PR_COMMENT:"com",PR_DECLARATION:"dec",PR_KEYWORD:"kwd",PR_LITERAL:"lit",
+            PR_NOCODE:"nocode",PR_PLAIN:"pln",PR_PUNCTUATION:"pun",PR_SOURCE:"src",PR_STRING:"str",PR_TAG:"tag",PR_TYPE:"typ"}})();
+            Ext.define('changeset.model.Branch', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'commit', type: 'object'},
+                    {name: 'name', type: 'string'}
+                ]
+            });            Ext.define('changeset.model.Commit', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'revision', type: 'string'},
+                    {name: 'url', type: 'string'},
+                    {name: 'author', type: 'object'},
+                    {name: 'avatarUrl', type: 'string'},
+                    {name: 'timestamp', type: 'date'},
+                    {name: 'message', type: 'string'},
+                    {name: 'tree', type: 'object'},
+                    {name: 'parents', type: 'array'}
+                ]
+            });            Ext.define('changeset.model.ChangesetFile', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'status', type: 'string'},
+                    {name: 'filename', type: 'string'},
+                    {name: 'url', type: 'string'},
+                    {name: 'deletions', type: 'integer'},
+                    {name: 'additions', type: 'integer'},
+                    {name: 'changes', type: 'integer'},
+                    {name: 'diff', type: 'string'}
+                ]
+            });            Ext.define('changeset.model.Repository', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'url', type: 'string'},
+                    {name: 'name', type: 'string'}
+                ]
+            });            Ext.define('changeset.data.GithubProxy', {
+                extend: 'Ext.data.proxy.Rest',
+            
+                statics: {
+                    /**
+                     * Build Commit record from Github api data.
+                     */
+                    extractCommitValues: function(data) {
+                        var output = {
+                            revision: data.sha,
+                            url: data.url,
+                            author: data.author,
+                            avatarUrl: data.author ? data.author.avatar_url : null,
+                            parents: data.parents
+                        };
+            
+                        var commit = data.commit;
+                        if (commit) {
+                            Ext.apply(output, commit);
+                            output.timestamp = commit.author.date;
+                        }
+                        return output
+                    },
+            
+                    extractChangesetFileValues: function(data) {
+                        var output = {
+                            status: data.status,
+                            filename: data.filename,
+                            url: data.raw_url,
+                            deletions: data.deletions,
+                            additions: data.additions,
+                            changes: data.changes,
+                            diff: data.patch
+                        };
+                        return output;
+                    }
+                },
+            
+                stripRallyHeaders: true,
+                pageParam: 'page',
+                limitParam: 'per_page',
+                startParam: undefined
+            });            /**
+             * Adapter classes contain methods to construct Store objects for use by ui components.
+             */
+            Ext.define('changeset.data.GithubAdapter', {
+                require: ['changeset.model.Changeset', 'changeset.data.GithubProxy'],
+                mixins: {
+                    observable: 'Ext.util.Observable',
+                    stateful: 'Ext.state.Stateful'
+                },
+            
+                /**
+                 * @cfg
+                 * Github username
+                 */
+                username: null,
+            
+                /**
+                 * @cfg
+                 * Github repository name
+                 */
+                repository: null,
+            
+                /**
+                 * @cfg
+                 * OAuth token for Github api
+                 */
+                authToken: null,
+            
+                /**
+                 * @cfg
+                 * Branch to grab commits from
+                 */
+                branch: null,
+            
+                /**
+                 * @cfg
+                 * Base url for all Github api requests.
+                 */
+                apiUrl: 'https://api.github.com',
+            
+                /**
+                 * stateful configs
+                 */
+                stateful: true,
+                stateEvents: ['ready', 'statechange'],
+                stateId: window.location.href + 'githubAdapter',
+            
+                constructor: function(config) {
+                    Ext.apply(this, config);
+            
+                    this.addEvents(
+                        /**
+                         * @event
+                         * Fired when the adapter is ready to be used.
+                         */
+                        'ready',
+                        /**
+                         * @event
+                         * Fired when the adapter needs authentication.
+                         */
+                        'authenticationrequired',
+                        /**
+                         * @event
+                         * Fired when the state needs to be saved.
+                         */
+                        'statechange'
+                    );
+            
+                    this.mixins.observable.constructor.apply(this, arguments);
+                    this.mixins.stateful.constructor.apply(this, arguments);
+            
+                    Ext.Ajax.on('beforerequest', this._onBeforeAjaxRequest, this);
+            
+                    this._init();
+                },
+            
+                /**
+                 * Get current state.
+                 */
+                getState: function() {
+                    return {
+                        username: this.username,
+                        authToken: this.authToken,
+                        repository: this.repository,
+                        branch: this.branch
+                    };
+                },
+            
+                /**
+                 * Get an appropriate login message
+                 */
+                getLoginMessage: function() {
+                    return 'Login to your GitHub account';
+                },
+            
+                /**
+                 * Return a url to the repository.
+                 */
+                getRepositoryUrl: function() {
+                    return 'https://github.com/' + this._getRepoPath();
+                },
+            
+                /*
+                 * Gets the currently selected repository.
+                 */
+                getRepository: function() {
+                    return this.repository;
+                },
+            
+                /*
+                 * Set the repository to fetch data from.
+                 */
+                setRepository: function(repository) {
+                    if( !this.repository || this.repository.name !== repository.raw.name ) {
+                        this.branch = null;
+                    }
+                    this.repository = repository.raw;
+                    this.fireEvent('statechange', this);
+                },
+            
+                /*
+                 * Gets the currently selected branch.
+                 */
+                getBranch: function() {
+                    return this.branch;
+                },
+            
+                /*
+                 * Set the branch to fetch data from.
+                 */
+                setBranch: function(branch) {
+                    this.branch = branch.raw;
+                    this.fireEvent('statechange', this);
+                },
+            
+                /**
+                 * Constructs a store which populates repository models.
+                 */
+                getRepositoryStore: function(callback, scope) {
+                    var url = [
+                        this.apiUrl,
+                        'user',
+                        'repos'
+                    ].join('/');
+            
+                    var store = Ext.create('Ext.data.Store', {
+                        model: 'changeset.model.Repository',
+                        proxy: Ext.create('changeset.data.GithubProxy', {
+                            url: url
+                        })
+                    });
+            
+                    callback.call(scope, store);
+                },
+            
+                /**
+                 * Constructs a store which populates branch models.
+                 */
+                getBranchStore: function(callback, scope) {
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this._getRepoPath(),
+                        'branches'
+                    ].join('/');
+            
+                    var store = Ext.create('Ext.data.Store', {
+                        model: 'changeset.model.Branch',
+                        proxy: Ext.create('changeset.data.GithubProxy', {
+                            url: url
+                        })
+                    });
+            
+                    callback.call(scope, store);
+                },
+            
+                /**
+                 * Returns a store which populates commit models.
+                 */
+                getCommitStore: function(callback, scope) {
+                    this.getBranchStore(function(store) {
+                        store.on('load', function(store) {
+                            this._onBranchLoad(store, callback, scope);
+                        }, this, {single: true});
+                        store.load();
+                    }, this);
+                },
+            
+                /**
+                 * Returns a store which populates changeset models.
+                 */
+                getChangesetStore: function(record, callback, scope) {
+                    if (record.get('parents').length < 1) {
+                        callback.call(scope, null);
+                        return;
+                    }
+            
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this._getRepoPath(),
+                        'compare',
+                        record.get('parents')[0].sha + '...' + record.get('revision')
+                    ].join('/');
+            
+                    var store = Ext.create('Ext.data.Store', {
+                        model: 'changeset.model.ChangesetFile',
+                        proxy: Ext.create('changeset.data.GithubProxy', {
+                            url: url,
+                            reader: {
+                                type: 'json',
+                                root: 'files',
+                                extractValues: changeset.data.GithubProxy.extractChangesetFileValues
+                            }
+                        })
+                    });
+            
+                    callback.call(scope, store);
+                },
+            
+                /**
+                 * Grabs an OAuth token using the passed credentials.
+                 * If this is successful, it will fire the 'ready' event,
+                 * if it fails, it will refire 'authenticationrequired'.
+                 */
+                authenticate: function(username, password) {
+                    this.username = username;
+                    var encodedAuth = 'Basic ' + btoa(this.username + ':' + password);
+                    Ext.Ajax.request({
+                        url: this.apiUrl + '/authorizations',
+                        method: 'POST',
+                        stripRallyHeaders: true,
+                        headers: {
+                            Authorization: encodedAuth
+                        },
+                        jsonData: {},
+                        success: function(response, opts) {
+                            var data = Ext.decode(response.responseText);
+                            this.authToken = data.token;
+                            this.fireEvent('ready', this);
+                        },
+                        failure: function(response, opts) {
+                            this.fireEvent('authenticationrequired', this);
+                        },
+                        scope: this
+                    });
+                },
+            
+                /**
+                 * Logs user out of github api.
+                 */
+                logout: function() {
+                    this.repository = null;
+                    this.branch = null;
+                    this.username = null;
+                    this.authToken = null;
+                    Ext.state.Manager.getProvider().clear(this.getStateId());
+                    this.fireEvent('authenticationrequired', this);
+                },
+            
+                /**
+                 * Removes Rally specific headers from Ajax request options.
+                 */
+                _stripRallyHeaders: function(opts) {
+                    if ((opts.stripRallyHeaders || (opts.scope && opts.scope.stripRallyHeaders)) && opts.headers) {
+                        delete opts.headers["X-RallyIntegrationLibrary"];
+                        delete opts.headers["X-RallyIntegrationName"];
+                    }
+                },
+            
+                _getRepoPath: function() {
+                    return this.repository.owner.login + '/' + this.repository.name
+                },
+            
+                /**
+                 * Initializes the adapter.
+                 */
+                _init: function() {
+                    if (!Ext.isEmpty(this.authToken)) {
+                        this.fireEvent('ready', this);
+                    } else {
+                        this.fireEvent('authenticationrequired', this);
+                    }
+                },
+            
+                _onBeforeAjaxRequest: function(ext, opts) {
+                    this._stripRallyHeaders(opts);
+                    if (!opts.headers.hasOwnProperty('Authorization')) {
+                        opts.headers["Authorization"] = 'token ' + this.authToken;
+                    }
+                },
+            
+                _onBranchLoad: function(store, callback, scope) {
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this._getRepoPath(),
+                        'commits'
+                    ].join('/');
+            
+                    var store = Ext.create('Ext.data.Store', {
+                        model: 'changeset.model.Commit',
+                        proxy: Ext.create('changeset.data.GithubProxy', {
+                            url: url,
+                            extraParams: {
+                                sha: this.branch.commit.sha
+                            },
+                            reader: {
+                                type: 'json',
+                                extractValues: changeset.data.GithubProxy.extractCommitValues
+                            }
+                        })
+                    });
+                    callback.call(scope, store);
+                },
+            
+                _getChangeset: function(record, callback, scope) {
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this._getRepoPath(),
+                        'compare',
+                        record.get('parents')[0].sha + '...' + record.get('revision')
+                    ].join('/');
+            
+                    Ext.Ajax.request({
+                        url: url,
+                        method: 'GET',
+                        stripRallyHeaders: true,
+                        jsonData: {},
+                        success: function(response, opts) {
+                            var data = Ext.decode(response.responseText);
+                            callback.call(scope, data)
+                        },
+                        scope: this
+                    });
+                }
+            });            Ext.define('changeset.ui.Avatar', {
+                extend: 'Ext.Component',
+                alias: 'widget.changesetavatar',
+                cls: 'changeset-avatar',
+                frame: true,
+                border: 0,
+                bodyBorder: false,
+            
+                listeners: {
+                    afterrender: function(cmp) {
+                        var avatarUrl = this.record.get('avatarUrl');
+                        if (!Ext.isEmpty(avatarUrl)) {
+                            avatarUrl += '&s=' + this.getWidth().toString();
+                            cmp.getEl().setStyle('background-image', 'url(' + avatarUrl + ')');
+                        }
+                    }
+                }
+            });            Ext.define('changset.ui.Login', {
+                extend: 'Ext.form.Panel',
+                alias: 'widget.changesetlogin',
+                cls: 'changeset-login',
+                width: 300,
+                height: 135,
+                layout: 'anchor',
+                defaults: {
+                    anchor: '100%'
+                },
+            
+                adapter: null,
+            
+                items: [{
+                    xtype: 'textfield',
+                    fieldLabel: 'Username',
+                    name: 'username',
+                    allowBlank: false
+                },{
+                    xtype: 'textfield',
+                    fieldLabel: 'Password',
+                    name: 'password',
+                    inputType: 'password',
+                    allowBlank: false
+                }],
+            
+                buttonAlign: 'center',
+                buttons: [{
+                    xtype: 'rallybutton',
+                    text: 'Login',
+                    itemId: 'LoginButton'
+                }],
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this.insert(0, {
+                        html: '<span class="login-message">' + this.adapter.getLoginMessage() + '</span>',
+                        border: 0,
+                        margin: '0 0 20 0'
+                    });
+            
+                    this.mon(this.down('#LoginButton'), 'click', this._onLoginClick, this);
+                },
+            
+                _onLoginClick: function() {
+                    if (this.getForm().isValid()) {
+                        var values = this.getValues();
+                        this.adapter.authenticate(values.username, values.password);
+                    }
+                }
+            });            Ext.define('changeset.ui.ChangesetFileDiff', {
+                extend: 'Ext.panel.Panel',
+                alias: 'widget.changesetfilediff',
+                cls: 'changeset-file-diff',
+                bodyBorder: false,
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    itemId: 'topToolbar',
+                    dock: 'top'
+                }],
+            
+                unifiedDiffRegex: /^@@\s\-(\d+)(,\d+)?\s(\d+)(,\d+)?\s@@/,
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    var link = Ext.String.format('<a href="{0}" class="changeset-file">{1}</a>',
+                        this.record.get('url'), this.record.get('filename'));
+                    this.getComponent('topToolbar').add([
+                        {
+                            html: link,
+                            listeners: {
+                                afterrender: function(cmp) {
+                                    cmp.getEl().down('.changeset-file').on('click', function(evt) {
+                                        evt.stopEvent();
+                                        window.open(this.record.get('url'), 'changesetFile');
+                                    }, this);
+                                },
+                                scope: this
+                            },
+                            flex: 1
+                        }
+                    ]);
+            
+                    this.add({
+                        html: this._renderSourceTable()
+                    });
+                },
+            
+                _renderSourceTable: function() {
+                    var diffLines = this.record.get('diff').split("\n");
+                    if (diffLines[diffLines.length - 1] === "\ No newline at end of file") {
+                        diffLines.pop();
+                    }
+                    var lineDetails;
+                    var tableBody = ['<table><tbody>'];
+                    Ext.each(diffLines, function(line) {
+                        if (!line) {
+                            return;
+                        }
+                        lineDetails = this._getLineDetails(line, lineDetails);
+                        var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
+                        row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
+                        row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
+                        row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
+                            Ext.htmlEncode(line)));
+                        row.push('</tr>');
+                        tableBody.push(row.join(''));
+                    }, this);
+                    tableBody.push('</tbody></table>');
+                    return tableBody.join("\n");
+                },
+            
+                _getLineDetails: function(line, lineDetails) {
+                    var diffMatch = this.unifiedDiffRegex.exec(line);
+                    if (diffMatch) {
+                        lineDetails = {
+                            oldLineNumber: parseInt(diffMatch[1], 10),
+                            newLineNumber: parseInt(diffMatch[3], 10),
+                            oldLineSymbol: 'old',
+                            newLineSymbol: 'new',
+                            lineCls: 'line-diff'
+                        }
+                    } else {
+                        var lineType = this._getLineType(line);
+                        if (lineType === '+') {
+                            this._getChangeDetail(lineDetails, false, true);
+                        } else if (lineType === '-') {
+                            this._getChangeDetail(lineDetails, true, false);
+                        } else {
+                            this._getChangeDetail(lineDetails, true, true);
+                        }
+                    }
+            
+                    return lineDetails;
+                },
+            
+                _getChangeDetail: function(lineDetails, incrementOld, incrementNew) {
+                    lineDetails.lineCls = 'line-equal';
+            
+                    if (incrementOld) {
+                        lineDetails.oldLineSymbol = lineDetails.oldLineNumber.toString();
+                        lineDetails.oldLineNumber++;
+                    } else {
+                        lineDetails.oldLineSymbol = '+';
+                        lineDetails.lineCls = 'line-add';
+                    }
+            
+                    if (incrementNew) {
+                        lineDetails.newLineSymbol = lineDetails.newLineNumber.toString();
+                        lineDetails.newLineNumber++;
+                    } else {
+                        lineDetails.newLineSymbol = '-';
+                        lineDetails.lineCls = 'line-remove';
+                    }
+                },
+            
+                _getLineType: function(line) {
+                    var marker = line.substring(0,1);
+                    if (marker === '+') {
+                        return marker;
+                    } else if (marker === '-') {
+                        return marker;
+                    }
+            
+                    return '=';
+                }
+            });            Ext.define('changeset.ui.ChangesetGrid', {
+                extend: 'Rally.ui.grid.Grid',
+                require: ['Rally.util.Navigation'],
+                alias: 'widget.changesetgrid',
+                cls: 'changeset-grid',
+            
+                /**
+                 * @cfg
+                 * Artifact type prefix regexes to match in commit messages.
+                 */
+                artifactRegexes: [
+                    /(\s+)(DE\d+)/,
+                    /(\s+)(US\d+)/,
+                    /(\s+)(TA\d+)/
+                ],
+            
+                columnCfgs: [{
+                    header: 'Message',
+                    dataIndex: 'message',
+                    itemId: 'messageCol',
+                    flex: 1,
+                    renderer: function(value) {
+                        Ext.each(this.artifactRegexes, function(artifactRegex) {
+                            value = value.replace(artifactRegex, '<a href="#" class="artifact-link">$1$2</a>');
+                        });
+                        return value;
+                    }
+                },{
+                    xtype: 'templatecolumn',
+                    header: 'Author',
+                    tpl: '{author.name}',
+                    flex: .3
+                },{
+                    xtype: 'datecolumn',
+                    header: 'Commit Time',
+                    dataIndex: 'timestamp',
+                    format: 'Y-m-d h:i:s A',
+                    width: 160
+                },{
+                    header: 'Revision',
+                    dataIndex: 'revision',
+                    renderer: function(value) {
+                        return Ext.String.format('<a href="#" class="revision-link">{0}</a>', value);
+                    },
+                    width: 85
+                }],
+            
+                constructor: function(config) {
+                    config = config || {};
+                    Ext.applyIf(config, {
+                        columnCfgs: this.columnCfgs
+                    });
+                    this.callParent([config]);
+                },
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this.addEvents(
+                        /**
+                         * @event
+                         * fired when a revision is clicked.
+                         */
+                        'revisionClicked',
+                        /**
+                         * @event
+                         * fired when an artifact is clicked.
+                         */
+                        'artifactClicked'
+                    );
+            
+                    this.on('render', this._onRender, this);
+                },
+            
+                _onRender: function() {
+                    var el = this.getEl();
+                    el.on('click', this._onArtifactClick, this, {delegate: 'a.artifact-link'});
+                    el.on('click', this._onRevisionClick, this, {delegate: 'a.revision-link'});
+                },
+            
+                _onArtifactClick: function(event, dom, opts) {
+                    this.fireEvent('artifactClicked', dom.innerHTML);
+                },
+            
+                _onRevisionClick: function(event, dom) {
+                    var record = this.store.findRecord('revision', dom.innerHTML);
+                    this.fireEvent('revisionClicked', record);
+                }
+            });            Ext.define('changeset.ui.ChangesetFilesGrid', {
+                extend: 'Rally.ui.grid.Grid',
+                alias: 'widget.changesetfilesgrid',
+                cls: 'changeset-files-grid',
+                storeConfig: {
+                    fetch: true,
+                    sorters: [{
+                        property: 'filename',
+                        direction: 'ASC'
+                    }]
+                },
+                columnCfgs: [{
+                    header: 'Status',
+                    dataIndex: 'status',
+                    renderer: function(value) {
+                        return Ext.String.capitalize(value.substring(0,3));
+                    },
+                    width: 50
+                },{
+                    header: 'File',
+                    xtype: 'templatecolumn',
+                    tpl: '<a href="#" class="file-name">{filename}</a>',
+                    flex: 1,
+                    listeners: {
+                        click: function(target, dom, index) {
+                            Ext.query('.changeset-file-diff')[index].scrollIntoView();
+                        }
+                    }
+                },{
+                    header: 'Changes',
+                    dataIndex: 'changes',
+                    width: 65
+                },{
+                    header: 'Additions',
+                    dataIndex: 'additions',
+                    width: 65
+                },{
+                    header: 'Deletions',
+                    dataIndex: 'deletions',
+                    width: 65
+                }],
+            
+                constructor: function(config) {
+                    config = config || {};
+                    Ext.applyIf(config, {
+                        columnCfgs: this.columnCfgs,
+                        storeConfig: this.storeConfig
+                    });
+            
+                    this.callParent([config]);
+                }
+            
+            
+            });            Ext.define('changeset.ui.ChangesetSummary', {
+                extend: 'Ext.panel.Panel',
+                alias: 'widget.changesetsummary',
+                cls: 'changeset-summary',
+                frame: true,
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    itemId: 'bottomToolbar',
+                    dock: 'bottom',
+                    border: 0
+                }],
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this._initItems();
+                },
+                
+                _initItems: function() {
+                    if (!this.record) {
+                        return;
+                    }
+            
+                    this.html = '<p>' + this.record.get('message') + '</p>';
+            
+                    var toolbar = this.getComponent('bottomToolbar');
+                    if (!Ext.isEmpty(this.record.get('avatarUrl'))) {
+                        toolbar.add([{
+                           margin: '2 6 2 2',
+                           xtype: 'changesetavatar',
+                           record: this.record,
+                           width: 40,
+                           height: 40
+                       }]);
+                    }
+            
+                    toolbar.add([
+                        {
+                            html: this.record.get('author').name
+                        },{
+                            html: Ext.Date.format(new Date(this.record.get('timestamp')), 'Y-m-d h:i:s A')
+                        },{
+                            html: this.record.get('revision')
+                        }
+                    ]);
+                }
+            });
+            Ext.define('changeset.ui.Changeset', {
+                extend: 'Ext.panel.Panel',
+                require: ['changeset.ui.ChangesetSummary'],
+                alias: 'widget.changeset',
+                cls: 'changeset',
+            
+                /**
+                 * @cfg
+                 * Adapter to use for retrieving data.
+                 */
+                adapter: null,
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this.on('afterrender', this._renderChangeset, this, {single: true});
+                },
+            
+                _renderChangeset: function() {
+                    if (!this.record) {
+                        return;
+                    }
+            
+                    this.add({
+                        xtype: 'changesetsummary',
+                        margin: 10,
+                        border: 0,
+                        record: this.record
+                    });
+            
+                    this._loadChangesetStore();
+                },
+            
+                _loadChangesetStore: function() {
+                    this.adapter.getChangesetStore(this.record, function(store) {
+                        if (!store) {
+                            return;
+                        }
+            
+                        this.mon(store, 'load', this._onChangesetStoreLoad, this, {single: true});
+                        this.up('panel').setLoading(true, true);
+                        store.load();
+                    }, this);
+                },
+            
+                _onChangesetStoreLoad: function(store) {
+                    var grid = this.insert( 1,
+                        {
+                            xtype: 'changesetfilesgrid',
+                            margin: 10,
+                            border: 0,
+                            store: store
+                        }
+                    );
+            
+                    var addedCount = 0;
+                    store.each(function(record) {
+                        var task = new Ext.util.DelayedTask(function() {
+                            this.add({
+                                xtype: 'changesetfilediff',
+                                margin: 10,
+                                border: 0,
+                                record: record,
+                                listeners: {
+                                    afterrender: {
+                                        fn: function() {
+                                            addedCount++;
+                                            if (addedCount === store.count()) {
+                                                prettyPrint();
+                                                this.up('panel').setLoading(false);
+                                            }
+                                        },
+                                        single: true
+                                    },
+                                    scope: this
+                                }
+                            });
+                        }, this);
+                        task.delay(10);
+                    }, this);
+                }
+            });            Ext.define('changeset.ui.ChangesetBrowser', {
+                extend: 'Ext.panel.Panel',
+                alias: 'widget.changesetbrowser',
+                require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset', 'Rally.ui.ComboBox'],
+                cls: 'changeset-browser',
+                border: 0,
+                bodyBorder: false,
+            
+                layout: {
+                    type: 'accordion',
+                    animate: true
+                },
+            
+                /**
+                 * @cfg
+                 * Adapter to use for retrieving data.
+                 */
+                adapter: null,
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this._populateToolbar();
+                },
+            
+                _populateToolbar: function() {
+                    this.addDocked({
+                        itemId: 'topToolbar',
+                        dock: 'top',
+                        border: 0,
+                        padding: 5,
+                        layout: 'hbox',
+                        items: [
+                            {
+                                xtype: 'rallybutton',
+                                text: 'Logout',
+                                handler: function() {
+                                    this.adapter.logout();
+                                },
+                                scope: this
+                            }
+                        ]
+                    });
+            
+                    this._addRepoChooser();
+                },
+            
+                _addRepoChooser: function() {
+                    var toolbar = this.down('#topToolbar');
+                    var valueField = 'name';
+                    this.adapter.getRepositoryStore(function(store) {
+                        var combo = toolbar.insert(0, {
+                            xtype: 'rallycombobox',
+                            margin: '0 5 0 0',
+                            store: store,
+                            fieldLabel: 'Repository:',
+                            labelWidth: 60,
+                            displayField: valueField,
+                            listeners: {
+                                beforeselect: function(combo, record) {
+                                    if (record && record.get('name') !== this.adapter.getRepository().name) {
+                                        this._onRepositorySelect(record);
+                                    }
+                                },
+                                scope: this
+                            }
+                        });
+            
+                        store.on('load', function() {
+                            var repo = this.adapter.getRepository();
+                            var selectedRepo = repo ? store.findRecord('name', repo.name) : store.getAt(0);
+                            combo.select(selectedRepo);
+                            this._onRepositorySelect(selectedRepo);
+                        }, this, {single: true});
+                        store.load();
+                    }, this);
+                },
+            
+                _onRepositorySelect: function(repository) {
+                    this.adapter.setRepository(repository);
+                    this.removeAll();
+                    this._addBranchChooser();
+                },
+            
+                _addBranchChooser: function() {
+                    var toolbar = this.down('#topToolbar');
+                    var combo = toolbar.down('#branchChooser');
+                    if (combo) {
+                        toolbar.remove(combo);
+                    }
+            
+                    var valueField = 'name';
+                    this.adapter.getBranchStore(function(store) {
+                        combo = toolbar.insert(1, {
+                            xtype: 'rallycombobox',
+                            itemId: 'branchChooser',
+                            margin: '0 5 0 0',
+                            store: store,
+                            fieldLabel: 'Branch:',
+                            labelWidth: 40,
+                            displayField: valueField,
+                            listeners: {
+                                beforeselect: function(combo, record) {
+                                    if (record && record.get('name') !== this.adapter.getBranch().name) {
+                                        this._onBranchSelect(record);
+                                    }
+                                },
+                                scope: this
+                            }
+                        });
+            
+                        store.on('load', function() {
+                            var branch = this.adapter.getBranch();
+                            var selectedBranch = branch ? store.findRecord('name', branch.name) : store.getAt(0);
+                            combo.select(selectedBranch);
+                            this._onBranchSelect(selectedBranch);
+                        }, this, {single: true});
+                        store.load();
+                    }, this);
+                },
+            
+                _onBranchSelect: function(branch) {
+                    this.adapter.setBranch(branch);
+                    this.removeAll();
+                    this._addGrid();
+                },
+            
+                _addGrid: function() {
+                    var callback = function(store) {
+                        var grid = this.add({
+                            xtype: 'changesetgrid',
+                            itemId: 'changeSetGrid',
+                            margin: '10 0 0 0',
+                            autoScroll: true,
+                            model: 'changeset.model.Commit',
+                            store: store
+                        });
+                        grid.setTitle('Commits');
+                        grid.expand();
+                        grid.getStore().load();
+                        this.mon(grid, 'artifactClicked', this._showArtifact, this);
+                        this.mon(grid, 'revisionClicked', this._showRevision, this);
+                    };
+                    this.adapter.getCommitStore(callback, this);
+                },
+            
+                _showArtifact: function(formattedId) {
+                    Ext.data.JsonP.request({
+                        url: Rally.environment.getServer().getWsapiUrl() + '/artifact.js',
+                        method: 'GET',
+                        callbackKey: 'jsonp',
+                        params: {
+                            query: '(FormattedID = ' + formattedId + ')'
+                        },
+                        success: this._onFormattedIdLoad,
+                        scope: this
+                    });
+                },
+            
+                _onFormattedIdLoad: function(result) {
+                    if (result.QueryResult) {
+                        var results = result.QueryResult.Results;
+                        if (results && results.length) {
+                            var ref = results[0]._ref;
+                            var detailLink = Rally.util.Navigation.createRallyDetailUrl(ref);
+                            window.open(detailLink, 'detailpage');
+                        }
+                    }
+                },
+            
+                _showRevision: function(record) {
+                    if (this.items.getCount() > 1) {
+                        this.remove(this.items.getAt(1));
+                    }
+                    var revision = this.add({
+                        xtype: 'changeset',
+                        adapter: this.adapter,
+                        title: 'Revision: ' + record.get('revision'),
+                        autoScroll: true,
+                        record: record
+                    });
+                    revision.expand();
+                }
+            });            Ext.define('CustomApp', {
+                extend: 'Rally.app.App',
+                require: [
+                    'Ext.state.Manager',
+                    'Ext.state.LocalStorageProvider',
+                    'Ext.state.CookieProvider',
+                    'changeset.data.GithubAdapter',
+                    'changeset.ui.ChangesetBrowser'
+                ],
+                componentCls: 'app',
+                layout: {
+                    type: 'vbox',
+                    align: 'stretch'
+                },
+            
+                launch: function() {
+                    var provider;
+                    try {
+                        provider = Ext.create('Ext.state.LocalStorageProvider');
+                    } catch (e) {
+                        provider = Ext.create('Ext.state.CookieProvider');
+                    }
+                    Ext.state.Manager.setProvider(provider);
+            
+                    this.adapter = Ext.create('changeset.data.GithubAdapter', {
+                        listeners: {
+                            ready: this._onAdapterReady,
+                            authenticationrequired: this._onAuthenticationRequired,
+                            scope: this
+                        }
+                    });
+                },
+            
+                _onAdapterReady: function(adapter) {
+                    this.removeAll();
+            
+                    this.add({
+                        xtype: 'changesetbrowser',
+                        margin: '0 5 5 5',
+                        border: 0,
+                        adapter: adapter,
+                        flex: 1
+                    });
+                },
+            
+                _onAuthenticationRequired: function(adapter) {
+                    this.removeAll();
+                    this.add({
+                        flex: 1,
+                        border: 0,
+                        adapter: this.adapter,
+                        items: [{
+                            xtype: 'changesetlogin',
+                            border: 0,
+                            adapter: adapter
+                        }]
+                    });
+                }
+            });
+
+            Rally.launchApp('CustomApp', {
+                name: 'RallyGithub'
+            });
+        });
+    </script>
+
+    <style type="text/css">
+        .pln{color:#000}@media screen{.str{color:#080}.kwd{color:#008}.com{color:#800}.typ{color:#606}.lit{color:#066}.pun,.opn,.clo{color:#660}.tag{color:#008}.atn{color:#606}.atv{color:#080}.dec,.var{color:#606}.fun{color:red}}@media print,projection{.str{color:#060}.kwd{color:#006;font-weight:bold}.com{color:#600;font-style:italic}.typ{color:#404;font-weight:bold}.lit{color:#044}.pun,.opn,.clo{color:#440}.tag{color:#006;font-weight:bold}.atn{color:#404}.atv{color:#060}}pre.prettyprint{padding:2px;border:1px solid #888}ol.linenums{margin-top:0;margin-bottom:0}li.L0,li.L1,li.L2,li.L3,li.L5,li.L6,li.L7,li.L8{list-style-type:none}li.L1,li.L3,li.L5,li.L7,li.L9{background:#eee}        .changeset-file-diff {
+            margin-top: 16px;
+            border: 1px solid #aaa;
+        }
+        
+        .changeset-file-diff table .prettyprint {
+            border: 0;
+        }
+        
+        .changeset-file-diff table {
+            width: 100%;
+        }
+        
+        .changeset-file-diff tr td, .changeset-file-diff tr th {
+            padding: 2px;
+            font-size: 10px;
+        }
+        
+        .changeset-file-diff tr th {
+            text-align: right;
+            background-color: #eee;
+            border-right: 1px solid #aaa;
+            width: 35px;
+        }
+        
+        .changeset-file-diff .x-panel-body{
+            border: 0;
+            border-top: 1px solid #aaa;
+        }
+        
+        .changeset-file-diff .x-toolbar {
+            background-color: #eee;
+        }
+        
+        .changeset-file-diff .x-toolbar-item {
+            background: transparent;
+            font-size: 16px;
+            cursor: default;
+        }
+        
+        .changeset-file-diff .line-add .x-panel-body,
+        .changeset-file-diff .line-remove .x-panel-body {
+            background: transparent;
+        }
+        
+        .changeset-file-diff .line-add, .changeset-file-diff .line-add th {
+            background-color: #DFD;
+        }
+        
+        .changeset-file-diff .line-remove, .changeset-file-diff .line-remove th {
+            background-color: #FDD;
+        }
+        
+        .changeset-file-diff .line-diff, .changeset-file-diff .line-diff th {
+            background-color: #DDF;
+        }        .changeset-login {
+            margin: 10px auto;
+        }
+        
+        .changeset-login .login-message {
+            font-size: 14px;
+        }        .changeset-browser-title .x-panel-body {
+            font-size: 18px;
+        }        .changeset-files-grid .x-panel-body {
+            border-bottom: 1px solid #999;
+            border-top: 1px solid #999 !important;
+        }
+        .changeset-summary, .changeset-summary .x-panel-body {
+            background-color: #eee;
+        }
+        
+        .changeset-summary {
+            border-color: #999;
+        }
+        
+        .changeset-summary p {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .changeset-summary .x-toolbar-docked-bottom {
+            border: 0;
+            background-color: transparent;
+        }
+        
+        .changeset-summary .x-toolbar-docked-bottom .x-toolbar-item {
+            background-color: #aaa;
+            font-size: 12px;
+        }
+        
+        .changeset-summary .x-toolbar-docked-bottom .x-toolbar-item:hover {
+            cursor: default;
+        }        .app .x-panel-body-default {
+            font-size: 14px;
+        }
+        
+        .app .x-panel-header-text {
+            font-size: 14px;
+        }
+        
+        .app .x-grid-cell-inner, .app .x-column-header-text {
+            margin: 4px 2px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body></body>
+</html>

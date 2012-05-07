@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RallyGithub</title>
+
+    <script type="text/javascript" src="https://rally1.rallydev.com/apps/2.0p/sdk-debug.js"></script>
+
+    <script type="text/javascript">
+        Rally.onReady(function() {
+            Rally.loadScripts([
+                "js-lib/google-code-prettify/prettify.js",
+                "changeset/model/Branch.js",
+                "changeset/model/Commit.js",
+                "changeset/model/ChangesetFile.js",
+                "changeset/model/Repository.js",
+                "changeset/data/GithubProxy.js",
+                "changeset/data/GithubAdapter.js",
+                "changeset/ui/Avatar.js",
+                "changeset/ui/Login.js",
+                "changeset/ui/ChangesetFileDiff.js",
+                "changeset/ui/ChangesetGrid.js",
+                "changeset/ui/ChangesetFilesGrid.js",
+                "changeset/ui/ChangesetSummary.js",
+                "changeset/ui/Changeset.js",
+                "changeset/ui/ChangesetBrowser.js",
+                "App.js"
+            ], function() {
+                Rally.launchApp('CustomApp', {
+                    name: 'RallyGithub'
+                })
+            }, true);
+        });
+    </script>
+
+<link rel="stylesheet" type="text/css" href="js-lib/google-code-prettify/prettify.css">
+<link rel="stylesheet" type="text/css" href="changeset/resources/css/changesetfilediff.css">
+<link rel="stylesheet" type="text/css" href="changeset/resources/css/changesetlogin.css">
+<link rel="stylesheet" type="text/css" href="changeset/resources/css/changesetbrowser.css">
+<link rel="stylesheet" type="text/css" href="changeset/resources/css/changesetfilesgrid.css">
+<link rel="stylesheet" type="text/css" href="changeset/resources/css/changesetsummary.css">
+<link rel="stylesheet" type="text/css" href="app.css">
+</head>
+<body></body>
+</html>
