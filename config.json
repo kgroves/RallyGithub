@@ -15,6 +15,7 @@
 
         "changeset/ui/Avatar.js",
         "changeset/ui/Login.js",
+        "changeset/ui/ChangesetSearch.js",
         "changeset/ui/ChangesetFileDiff.js",
         "changeset/ui/ChangesetGrid.js",
         "changeset/ui/ChangesetFilesGrid.js",

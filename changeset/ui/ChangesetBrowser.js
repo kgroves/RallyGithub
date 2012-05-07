@@ -29,16 +29,17 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             border: 0,
             padding: 5,
             layout: 'hbox',
-            items: [
-                {
-                    xtype: 'rallybutton',
-                    text: 'Logout',
-                    handler: function() {
-                        this.adapter.logout();
-                    },
-                    scope: this
-                }
-            ]
+            items: [{
+                xtype: 'rallybutton',
+                text: 'Logout',
+                handler: function() {
+                    this.adapter.logout();
+                },
+                scope: this
+            },{
+                xtype: 'changesetsearch',
+                margin: '0 0 0 10'
+            }]
         });
 
         this._addRepoChooser();
