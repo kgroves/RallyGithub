@@ -77,10 +77,11 @@ Ext.define('changeset.ui.ChangesetBrowser', {
 
     _onRepositorySelect: function(repository) {
         this.adapter.setRepository(repository);
+        this.removeAll();
         this._addBranchChooser();
     },
 
-    _addBranchChooser: function(toolbar) {
+    _addBranchChooser: function() {
         var toolbar = this.down('#topToolbar');
         var combo = toolbar.down('#branchChooser');
         if (combo) {
@@ -119,26 +120,20 @@ Ext.define('changeset.ui.ChangesetBrowser', {
 
     _onBranchSelect: function(branch) {
         this.adapter.setBranch(branch);
+        this.removeAll();
         this._addGrid();
     },
 
     _addGrid: function() {
-        var gridCmp = this.down('#changeSetGrid');
-        if (gridCmp) {
-            this.remove(gridCmp);
-        }
-
         var callback = function(store) {
-            var grid = this.add(
-                {
-                    xtype: 'changesetgrid',
-                    itemId: 'changeSetGrid',
-                    margin: '10 0 0 0',
-                    autoScroll: true,
-                    model: 'changeset.model.Commit',
-                    store: store
-                }
-            );
+            var grid = this.add({
+                xtype: 'changesetgrid',
+                itemId: 'changeSetGrid',
+                margin: '10 0 0 0',
+                autoScroll: true,
+                model: 'changeset.model.Commit',
+                store: store
+            });
             grid.setTitle('Commits');
             grid.expand();
             grid.getStore().load();

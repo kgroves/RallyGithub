@@ -44,6 +44,9 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         var lineDetails;
         var tableBody = ['<table><tbody>'];
         Ext.each(diffLines, function(line) {
+            if (!line) {
+                return;
+            }
             lineDetails = this._getLineDetails(line, lineDetails);
             var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
             row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
