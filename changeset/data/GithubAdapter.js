@@ -111,8 +111,10 @@ Ext.define('changeset.data.GithubAdapter', {
      * Set the repository to fetch data from.
      */
     setRepository: function(repository) {
+        if( !this.repository || this.repository.name !== repository.raw.name ) {
+            this.branch = null;
+        }
         this.repository = repository.raw;
-        this.branch = null;
         this.fireEvent('statechange', this);
     },
 
