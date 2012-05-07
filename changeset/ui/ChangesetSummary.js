@@ -3,6 +3,37 @@ Ext.define('changeset.ui.ChangesetSummary', {
     alias: 'widget.changesetsummary',
     cls: 'changeset-summary',
     frame: true,
+    
+    /**
+     * @cfg
+     */
+    messageField: 'message',
+    
+    /**
+     * @cfg
+     */
+    avatarField: 'avatarUrl',
+    
+    /**
+     * @cfg
+     */
+    userField: 'author',
+    
+    /**
+     * @cfg
+     */
+    userNameField: 'name',
+    
+    /**
+     * @cfg
+     */
+    timestampField: 'timestamp',
+    
+    /**
+     * @cfg
+     */
+    revisionField: 'revision',
+    
     dockedItems: [{
         xtype: 'toolbar',
         itemId: 'bottomToolbar',
@@ -20,10 +51,10 @@ Ext.define('changeset.ui.ChangesetSummary', {
             return;
         }
 
-        this.html = '<p>' + this.record.get('message') + '</p>';
+        this.html = '<p>' + this.record.get(this.messageField) + '</p>';
 
         var toolbar = this.getComponent('bottomToolbar');
-        if (!Ext.isEmpty(this.record.get('avatarUrl'))) {
+        if (!Ext.isEmpty(this.record.get(this.avatarField))) {
             toolbar.add([{
                margin: '2 6 2 2',
                xtype: 'changesetavatar',
@@ -35,11 +66,11 @@ Ext.define('changeset.ui.ChangesetSummary', {
 
         toolbar.add([
             {
-                html: this.record.get('author').name
+                html: this.record.get(this.userField)[this.userNameField]
             },{
-                html: Ext.Date.format(new Date(this.record.get('timestamp')), 'Y-m-d h:i:s A')
+                html: Ext.Date.format(new Date(this.record.get(this.timestampField)), 'Y-m-d h:i:s A')
             },{
-                html: this.record.get('revision')
+                html: this.record.get(this.revisionField)
             }
         ]);
     }

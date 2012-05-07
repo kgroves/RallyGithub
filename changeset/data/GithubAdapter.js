@@ -37,6 +37,12 @@ Ext.define('changeset.data.GithubAdapter', {
      * Base url for all Github api requests.
      */
     apiUrl: 'https://api.github.com',
+    
+    /**
+     * @cfg
+     * Maximum pageSize allowed by api.
+     */
+    maxPageSize: 100,
 
     /**
      * stateful configs
@@ -217,6 +223,34 @@ Ext.define('changeset.data.GithubAdapter', {
 
         callback.call(scope, store);
     },
+    
+    /**
+     * Returns a store which populates comment models.
+     */
+    getCommentStore: function(record, callback, scope) {
+        var url = [
+            this.apiUrl,
+            'repos',
+            this._getRepoPath(),
+            'commits',
+            record.get('revision'),
+            'comments'
+        ].join('/');
+
+        var store = Ext.create('Ext.data.Store', {
+            model: 'changeset.model.Comment',
+            pageSize: this.maxPageSize,
+            proxy: Ext.create('changeset.data.GithubProxy', {
+                url: url,
+                reader: {
+                    type: 'json',
+                    extractValues: changeset.data.GithubProxy.extractCommentValues
+                }
+            })
+        });
+        
+        callback.call(scope, store);
+    },
 
     /**
      * Grabs an OAuth token using the passed credentials.
@@ -272,9 +306,6 @@ Ext.define('changeset.data.GithubAdapter', {
         return this.repository.owner.login + '/' + this.repository.name;
     },
 
-    /**
-     * Initializes the adapter.
-     */
     _init: function() {
         if (!Ext.isEmpty(this.authToken)) {
             this.fireEvent('ready', this);

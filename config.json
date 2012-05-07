@@ -6,10 +6,12 @@
         "js-lib/google-code-prettify/prettify.js",
 
         "changeset/model/Branch.js",
+        "changeset/model/Comment.js",
         "changeset/model/Commit.js",
         "changeset/model/ChangesetFile.js",
         "changeset/model/Repository.js",
 
+        "changeset/data/CommentLocator.js",
         "changeset/data/GithubProxy.js",
         "changeset/data/GithubAdapter.js",
 

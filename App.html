@@ -41,6 +41,16 @@
                     {name: 'commit', type: 'object'},
                     {name: 'name', type: 'string'}
                 ]
+            });            Ext.define('changeset.model.Comment', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'revision', type: 'string'},
+                    {name: 'filename', type: 'string'},
+                    {name: 'lineNumber', type: 'string'},
+                    {name: 'user', type: 'object'},
+                    {name: 'comment', type: 'string'},
+                    {name: 'timestamp', type: 'date'}
+                ]
             });            Ext.define('changeset.model.Commit', {
                 extend: 'Ext.data.Model',
                 fields: [
@@ -70,12 +80,43 @@
                     {name: 'url', type: 'string'},
                     {name: 'name', type: 'string'}
                 ]
+            });            /** Easy comment lookup by path and line number. */
+            Ext.define('changeset.data.CommentLocator', {
+                
+                constructor: function(store) {
+                    this.comments = this._getKeyedComments(store);
+                },
+                
+                /**
+                 * Returns a comment that belongs to a specific line.
+                 * 
+                 * @param {String} path file path
+                 * @param {String|Int} lineNumber line number.
+                 * @return {changeset.model.Comment}
+                 */
+                getComment: function(path, lineNumber) {
+                    var key = this.getCommentKey(path, lineNumber);
+                    return this.comments[key] || null;
+                },
+                
+                _getCommentKey: function(path, lineNumber) {
+                    return path + ':' + lineNumber.toString();
+                },
+                
+                _getKeyedComments: function(store) {
+                    var comments = {};
+                    store.each(function(record) {
+                        var key = this._getCommentKey(record.get('path'), record.get('lineNumber'));
+                        comments[key] = record;
+                    }, this);
+                    return comments;
+                }
             });            Ext.define('changeset.data.GithubProxy', {
                 extend: 'Ext.data.proxy.Rest',
             
                 statics: {
                     /**
-                     * Build Commit record from Github api data.
+                     * extract functions are used to normalize data objects
                      */
                     extractCommitValues: function(data) {
                         var output = {
@@ -91,7 +132,7 @@
                             Ext.apply(output, commit);
                             output.timestamp = commit.author.date;
                         }
-                        return output
+                        return output;
                     },
             
                     extractChangesetFileValues: function(data) {
@@ -103,6 +144,18 @@
                             additions: data.additions,
                             changes: data.changes,
                             diff: data.patch
+                        };
+                        return output;
+                    },
+                    
+                    extractCommentValues: function(data) {
+                        var output = {
+                            revision: data.commit_id,
+                            filename: data.path,
+                            lineNumber: data.position,
+                            comment: data.comment,
+                            timestamp: data.created_at,
+                            user: data.user
                         };
                         return output;
                     }
@@ -151,6 +204,12 @@
                  * Base url for all Github api requests.
                  */
                 apiUrl: 'https://api.github.com',
+                
+                /**
+                 * @cfg
+                 * Maximum pageSize allowed by api.
+                 */
+                maxPageSize: 100,
             
                 /**
                  * stateful configs
@@ -331,6 +390,34 @@
             
                     callback.call(scope, store);
                 },
+                
+                /**
+                 * Returns a store which populates comment models.
+                 */
+                getCommentStore: function(record, callback, scope) {
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this._getRepoPath(),
+                        'commits',
+                        record.get('revision'),
+                        'comments'
+                    ].join('/');
+            
+                    var store = Ext.create('Ext.data.Store', {
+                        model: 'changeset.model.Comment',
+                        pageSize: this.maxPageSize,
+                        proxy: Ext.create('changeset.data.GithubProxy', {
+                            url: url,
+                            reader: {
+                                type: 'json',
+                                extractValues: changeset.data.GithubProxy.extractCommentValues
+                            }
+                        })
+                    });
+                    
+                    callback.call(scope, store);
+                },
             
                 /**
                  * Grabs an OAuth token using the passed credentials.
@@ -383,12 +470,9 @@
                 },
             
                 _getRepoPath: function() {
-                    return this.repository.owner.login + '/' + this.repository.name
+                    return this.repository.owner.login + '/' + this.repository.name;
                 },
             
-                /**
-                 * Initializes the adapter.
-                 */
                 _init: function() {
                     if (!Ext.isEmpty(this.authToken)) {
                         this.fireEvent('ready', this);
@@ -400,7 +484,7 @@
                 _onBeforeAjaxRequest: function(ext, opts) {
                     this._stripRallyHeaders(opts);
                     if (!opts.headers.hasOwnProperty('Authorization')) {
-                        opts.headers["Authorization"] = 'token ' + this.authToken;
+                        opts.headers.Authorization = 'token ' + this.authToken;
                     }
                 },
             
@@ -412,7 +496,7 @@
                         'commits'
                     ].join('/');
             
-                    var store = Ext.create('Ext.data.Store', {
+                    var branchStore = Ext.create('Ext.data.Store', {
                         model: 'changeset.model.Commit',
                         proxy: Ext.create('changeset.data.GithubProxy', {
                             url: url,
@@ -425,7 +509,7 @@
                             }
                         })
                     });
-                    callback.call(scope, store);
+                    callback.call(scope, branchStore);
                 },
             
                 _getChangeset: function(record, callback, scope) {
@@ -444,7 +528,7 @@
                         jsonData: {},
                         success: function(response, opts) {
                             var data = Ext.decode(response.responseText);
-                            callback.call(scope, data)
+                            callback.call(scope, data);
                         },
                         scope: this
                     });
@@ -527,7 +611,19 @@
                     dock: 'top'
                 }],
             
+                /**
+                 * @cfg
+                 * @private
+                 * 
+                 * Regex used to parse unified diff delimiter.
+                 */
                 unifiedDiffRegex: /^@@\s\-(\d+)(,\d+)?\s(\d+)(,\d+)?\s@@/,
+                
+                /**
+                 * @cfg {changeset.data.CommentLocator}
+                 * Comments attached to this commit. Rendered inline.
+                 */
+                commentLocator: null,
             
                 initComponent: function() {
                     this.callParent(arguments);
@@ -566,16 +662,42 @@
                             return;
                         }
                         lineDetails = this._getLineDetails(line, lineDetails);
-                        var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
-                        row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
-                        row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
-                        row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
-                            Ext.htmlEncode(line)));
-                        row.push('</tr>');
-                        tableBody.push(row.join(''));
+                        tableBody.push(this._renderDiffLine(line, lineDetails));
+                        var lineComment = this._renderDiffLineComment(lineDetails);
+                        if (!Ext.isEmpty(lineComment)) {
+                            tableBody.push(lineComment);
+                        }
                     }, this);
                     tableBody.push('</tbody></table>');
                     return tableBody.join("\n");
+                },
+                
+                _renderDiffLine: function (line, lineDetails) {
+                    var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
+                    row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
+                    row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
+                    row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
+                        Ext.htmlEncode(line)));
+                    row.push('</tr>');
+                    return row.join('');
+                },
+                
+                _renderDiffLineComment: function(lineDetails) {
+                    if (lineDetails.newLineSymbol === '-') {
+                        return null;
+                    }
+                    
+                    var comment = this.commentLocator.getComment(
+                        this.record.get('filename'), lineDetails.newLineNumber);
+                    if (!comment) {
+                        return null;
+                    }
+                    
+                    var row = [Ext.String.format('<tr class="changeset-comment" >')];
+                    row.push('<th colspan="2">comment</th>');
+                    row.push(Ext.String.format('<td>{0}</td>', 'COMMENT!!'));
+                    row.push('</tr>');
+                    return row.join('');
                 },
             
                 _getLineDetails: function(line, lineDetails) {
@@ -587,7 +709,7 @@
                             oldLineSymbol: 'old',
                             newLineSymbol: 'new',
                             lineCls: 'line-diff'
-                        }
+                        };
                     } else {
                         var lineType = this._getLineType(line);
                         if (lineType === '+') {
@@ -663,7 +785,7 @@
                     xtype: 'templatecolumn',
                     header: 'Author',
                     tpl: '{author.name}',
-                    flex: .3
+                    flex: 0.3
                 },{
                     xtype: 'datecolumn',
                     header: 'Commit Time',
@@ -820,7 +942,12 @@
             });
             Ext.define('changeset.ui.Changeset', {
                 extend: 'Ext.panel.Panel',
-                require: ['changeset.ui.ChangesetSummary'],
+                require: [
+                    'changeset.data.CommentLocator',
+                    'changeset.ui.ChangesetSummary',
+                    'changeset.ui.ChangesetFileDiff',
+                    'changeset.ui.ChangesetFilesGrid'
+                ],
                 alias: 'widget.changeset',
                 cls: 'changeset',
             
@@ -847,22 +974,31 @@
                         record: this.record
                     });
             
-                    this._loadChangesetStore();
+                    this._loadComments();
                 },
-            
-                _loadChangesetStore: function() {
+                
+                _loadComments: function() {
+                    this.adapter.getCommentStore(this.record, function(store) {
+                        store.on('load', this._onCommentStoreLoad, this);
+                        store.load();
+                    }, this);
+                },
+                
+                _onCommentStoreLoad: function(store) {
                     this.adapter.getChangesetStore(this.record, function(store) {
                         if (!store) {
                             return;
                         }
-            
-                        this.mon(store, 'load', this._onChangesetStoreLoad, this, {single: true});
+                        
+                        var commentLocator = new changeset.data.CommentLocator(store);
+                        var callback = Ext.bind(this._onChangesetStoreLoad, this, [commentLocator], true);
+                        this.mon(store, 'load', callback, this, {single: true});
                         this.up('panel').setLoading(true, true);
                         store.load();
                     }, this);
                 },
             
-                _onChangesetStoreLoad: function(store) {
+                _onChangesetStoreLoad: function(store, records, scope, opts, commentLocator) {
                     var grid = this.insert( 1,
                         {
                             xtype: 'changesetfilesgrid',
@@ -880,6 +1016,7 @@
                                 margin: 10,
                                 border: 0,
                                 record: record,
+                                commentLocator: commentLocator,
                                 listeners: {
                                     afterrender: {
                                         fn: function() {
@@ -897,7 +1034,7 @@
                         }, this);
                         task.delay(10);
                     }, this);
-                }
+                },
             });            Ext.define('changeset.ui.ChangesetBrowser', {
                 extend: 'Ext.panel.Panel',
                 alias: 'widget.changesetbrowser',

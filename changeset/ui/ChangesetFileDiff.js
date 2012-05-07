@@ -1,5 +1,6 @@
 Ext.define('changeset.ui.ChangesetFileDiff', {
     extend: 'Ext.panel.Panel',
+    require: ['changeset.ui.ChangesetSummary'],
     alias: 'widget.changesetfilediff',
     cls: 'changeset-file-diff',
     bodyBorder: false,
@@ -9,7 +10,19 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         dock: 'top'
     }],
 
+    /**
+     * @cfg
+     * @private
+     * 
+     * Regex used to parse unified diff delimiter.
+     */
     unifiedDiffRegex: /^@@\s\-(\d+)(,\d+)?\s\+(\d+)(,\d+)?\s@@/,
+    
+    /**
+     * @cfg {changeset.data.CommentLocator}
+     * Comments attached to this commit. Rendered inline.
+     */
+    commentLocator: null,
 
     initComponent: function() {
         this.callParent(arguments);
@@ -31,8 +44,17 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
             }
         ]);
 
+        var source = this._renderSourceTable();
         this.add({
-            html: this._renderSourceTable()
+            html: source[0],
+            listeners: {
+                afterrender: function() {
+                    Ext.each(source[1], function(commentConfig){
+                        Ext.create('changeset.ui.ChangesetSummary', commentConfig);
+                    });
+                },
+                scope: this
+            }
         });
     },
 
@@ -41,23 +63,61 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         if (diffLines[diffLines.length - 1] === "\\ No newline at end of file") {
             diffLines.pop();
         }
-        var lineDetails;
-        var tableBody = ['<table><tbody>'];
-        Ext.each(diffLines, function(line) {
+        var lineDetails,
+            commentConfigs = [],
+            tableBody = ['<table><tbody>'];
+        Ext.each(diffLines, function(line, lineIdx) {
             if (!line) {
                 return;
             }
             lineDetails = this._getLineDetails(line, lineDetails);
-            var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
-            row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
-            row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
-            row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
-                Ext.htmlEncode(line)));
-            row.push('</tr>');
-            tableBody.push(row.join(''));
+            tableBody.push(this._renderDiffLine(line, lineIdx, lineDetails));
+            var lineComment = this._renderDiffLineComment(lineIdx, commentConfigs);
+            if (!Ext.isEmpty(lineComment)) {
+                tableBody.push(lineComment);
+            }
         }, this);
         tableBody.push('</tbody></table>');
-        return tableBody.join("\n");
+        return [tableBody.join("\n"), commentConfigs];
+    },
+    
+    _renderDiffLine: function (line, lineIdx, lineDetails) {
+        var row = [Ext.String.format('<tr class="{0} line-code line-idx-{1}">', lineDetails.lineCls, lineIdx)];
+        row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
+        row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
+        row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
+            Ext.htmlEncode(line)));
+        row.push('</tr>');
+        return row.join('');
+    },
+    
+    _renderDiffLineComment: function(lineIdx, commentConfigs) {
+        var comments = this.commentLocator.getComments(
+            this.record.get('filename'), lineIdx);
+        
+        if (!comments) {
+            return null;
+        }
+        
+        var commentRows = [];
+        Ext.each(comments, function(comment, idx) {
+            var commentId = this.record.get('filename') + '-' + lineIdx + '-' + idx,
+                row = [Ext.String.format('<tr class="line-comment" >')];
+            row.push('<th colspan="2">comment</th>');
+            row.push(Ext.String.format('<td><div id="{0}" class="changeset-comment"></div></td>', commentId));
+            row.push('</tr>');
+            commentRows.push(row.join(''));
+            
+            commentConfigs.push({
+                renderTo: commentId,
+                record: comment,
+                messageField: 'comment',
+                userField: 'user',
+                userNameField: 'login',
+                revisionField: 'filename'
+            });
+        }, this);
+        return commentRows.join('\n');
     },
 
     _getLineDetails: function(line, lineDetails) {

@@ -54,3 +54,24 @@
 .changeset-file-diff .line-diff, .changeset-file-diff .line-diff th {
     background-color: #DDF;
 }
+
+.changeset-file-diff .line-comment, .changeset-file-diff .line-comment th {
+    background-color: #fff9b1;
+}
+
+.changeset-file-diff .line-comment {
+    border: 1px solid #aaa;
+    border-left: 0;
+}
+
+.changeset-file-diff .line-comment th {
+    font-size: 12px;
+}
+
+.changeset-comment {
+    margin: 5px;
+}
+
+.changeset-comment .x-panel-body {
+    border: 0;
+}
