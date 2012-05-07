@@ -69,7 +69,7 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
                 oldLineSymbol: 'old',
                 newLineSymbol: 'new',
                 lineCls: 'line-diff'
-            }
+            };
         } else {
             var lineType = this._getLineType(line);
             if (lineType === '+') {

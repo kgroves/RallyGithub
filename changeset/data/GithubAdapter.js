@@ -269,7 +269,7 @@ Ext.define('changeset.data.GithubAdapter', {
     },
 
     _getRepoPath: function() {
-        return this.repository.owner.login + '/' + this.repository.name
+        return this.repository.owner.login + '/' + this.repository.name;
     },
 
     /**
@@ -286,7 +286,7 @@ Ext.define('changeset.data.GithubAdapter', {
     _onBeforeAjaxRequest: function(ext, opts) {
         this._stripRallyHeaders(opts);
         if (!opts.headers.hasOwnProperty('Authorization')) {
-            opts.headers["Authorization"] = 'token ' + this.authToken;
+            opts.headers.Authorization = 'token ' + this.authToken;
         }
     },
 
@@ -298,7 +298,7 @@ Ext.define('changeset.data.GithubAdapter', {
             'commits'
         ].join('/');
 
-        var store = Ext.create('Ext.data.Store', {
+        var branchStore = Ext.create('Ext.data.Store', {
             model: 'changeset.model.Commit',
             proxy: Ext.create('changeset.data.GithubProxy', {
                 url: url,
@@ -311,7 +311,7 @@ Ext.define('changeset.data.GithubAdapter', {
                 }
             })
         });
-        callback.call(scope, store);
+        callback.call(scope, branchStore);
     },
 
     _getChangeset: function(record, callback, scope) {
@@ -330,7 +330,7 @@ Ext.define('changeset.data.GithubAdapter', {
             jsonData: {},
             success: function(response, opts) {
                 var data = Ext.decode(response.responseText);
-                callback.call(scope, data)
+                callback.call(scope, data);
             },
             scope: this
         });

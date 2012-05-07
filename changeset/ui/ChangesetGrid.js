@@ -29,7 +29,7 @@ Ext.define('changeset.ui.ChangesetGrid', {
         xtype: 'templatecolumn',
         header: 'Author',
         tpl: '{author.name}',
-        flex: .3
+        flex: 0.3
     },{
         xtype: 'datecolumn',
         header: 'Commit Time',

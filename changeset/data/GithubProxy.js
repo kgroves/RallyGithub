@@ -19,7 +19,7 @@ Ext.define('changeset.data.GithubProxy', {
                 Ext.apply(output, commit);
                 output.timestamp = commit.author.date;
             }
-            return output
+            return output;
         },
 
         extractChangesetFileValues: function(data) {
