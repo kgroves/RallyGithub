@@ -37,8 +37,9 @@ Ext.define('changeset.ui.ChangesetBrowser', {
                 },
                 scope: this
             },{
-                xtype: 'changesetsearch',
-                margin: '0 0 0 10'
+                xtype: 'changesetfilter',
+                margin: '0 0 0 10',
+                flex: 1
             }]
         });
 
