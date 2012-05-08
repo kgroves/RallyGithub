@@ -47,12 +47,14 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         var source = this._renderSourceTable();
         this.add({
             html: source[0],
+            autoScroll: true,
             border: 0,
             listeners: {
                 afterrender: function(cmp) {
                     Ext.each(source[1], function(commentConfig){
+                        Ext.apply(commentConfig, {width: this._getCommentWidth()});
                         Ext.create('changeset.ui.ChangesetSummary', commentConfig);
-                    });
+                    }, this);
 
                     cmp.getEl().on('mouseover', this._onLineOver, this, {delegate: '.line-code'});
                 },
@@ -110,7 +112,7 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
             row.push(Ext.String.format('<td><div id="{0}" class="changeset-comment"></div></td>', commentId));
             row.push('</tr>');
             commentRows.push(row.join(''));
-            
+
             commentConfigs.push({
                 renderTo: commentId,
                 record: comment,
@@ -181,6 +183,11 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
     },
 
     _showAddComment: function(evt, target, options) {
+        // close existing comment
+        if (this.addCommentCmp) {
+            this.addCommentCmp.fireEvent('cancel', this.addCommentCmp);
+        }
+
         var lineEl = Ext.fly(target).up('tr');
         var nextTr = lineEl.dom.nextSibling;
         while (nextTr && (nextTr.nodeType !== 1 || nextTr.className.match(/line\-comment/))) {
@@ -193,17 +200,33 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
             cls: 'line-comment',
             html: '<th colspan="2">comment</th><td><div class="changeset-add-comment"></div></td>'
         }, true);
-        commentEl.scrollIntoView();
+        commentEl.scrollIntoView(commentEl.up('.x-accordion-body'), false);
 
-        var addCommentCmp = Ext.create('changeset.ui.AddComment', {
+        this.addCommentCmp = Ext.create('changeset.ui.AddComment', {
             renderTo: commentEl.down('.changeset-add-comment'),
             margin: 5,
+            width: this._getCommentWidth(),
             listeners: {
                 save: this._onSaveComment,
                 cancel: this._onCancelComment,
+                afterrender: function() {
+                    this.doLayout();
+                },
+                destroy: function() {
+                    this.addCommentCmp = null;
+                },
                 scope: this
             }
         });
+    },
+
+    _getCommentWidth: function() {
+        var borderWidth = 1,
+            borderCount = 3,
+            thWidth = 35,
+            thCount = 2,
+            paddingWidth = 5;
+        return this.getWidth() - (borderWidth * borderCount) - (thWidth * thCount) - (paddingWidth * 2);
     },
 
     _onSaveComment: function(cmp, comment) {
@@ -234,11 +257,18 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
 
             Ext.create('changeset.ui.ChangesetSummary', {
                 renderTo: commentEl,
+                width: this._getCommentWidth(),
                 record: record,
                 messageField: 'comment',
                 userField: 'user',
                 userNameField: 'login',
-                revisionField: 'filename'
+                revisionField: 'filename',
+                listeners: {
+                    afterrender: function() {
+                        this.doLayout();
+                    },
+                    scope: this
+                }
             });
         }, this);
     },
@@ -247,6 +277,7 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         var rowEl = cmp.getEl().up('tr');
         cmp.destroy();
         rowEl.destroy();
+        this.doLayout();
     },
 
     _onLineOver: function(evt, target, options) {
