@@ -52,6 +52,7 @@
 .changeset-file-diff .line-comment {
     border: 1px solid #aaa;
     border-left: 0;
+    border-right: 0;
 }
 
 .changeset-file-diff .line-comment th {

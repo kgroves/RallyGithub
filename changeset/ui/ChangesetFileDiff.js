@@ -188,14 +188,15 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
             this.addCommentCmp.fireEvent('cancel', this.addCommentCmp);
         }
 
-        var lineEl = Ext.fly(target).up('tr');
+        var lineEl = Ext.get(target).up('tr');
+        var afterEl = lineEl;
         var nextTr = lineEl.dom.nextSibling;
         while (nextTr && (nextTr.nodeType !== 1 || nextTr.className.match(/line\-comment/))) {
-            lineEl = Ext.fly(nextTr);
+            afterEl = Ext.fly(nextTr);
             nextTr = nextTr.nextSibling;
         }
 
-        var commentEl = Ext.DomHelper.insertAfter(lineEl, {
+        var commentEl = Ext.DomHelper.insertAfter(afterEl, {
             tag: 'tr',
             cls: 'line-comment',
             html: '<th colspan="2">comment</th><td><div class="changeset-add-comment"></div></td>'
@@ -207,7 +208,7 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
             margin: 5,
             width: this._getCommentWidth(),
             listeners: {
-                save: this._onSaveComment,
+                save: Ext.bind(this._onSaveComment, this, [lineEl], true),
                 cancel: this._onCancelComment,
                 afterrender: function() {
                     this.doLayout();
@@ -222,17 +223,17 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
 
     _getCommentWidth: function() {
         var borderWidth = 1,
-            borderCount = 3,
+            borderCount = 5,
             thWidth = 35,
             thCount = 2,
             paddingWidth = 5;
         return this.getWidth() - (borderWidth * borderCount) - (thWidth * thCount) - (paddingWidth * 2);
     },
 
-    _onSaveComment: function(cmp, comment) {
+    _onSaveComment: function(cmp, comment, options, lineEl) {
         cmp.setLoading(true);
 
-        var lineIdx, diffIdx, lineEl = cmp.getEl().up('tr');
+        var lineIdx, diffIdx;
         Ext.each(lineEl.dom.className.split(' '), function(clsName) {
             var lineMatch = clsName.match(/line\-idx\-(\d+)/),
                 diffMatch = clsName.match(/diff\-idx\-(\d+)/);
