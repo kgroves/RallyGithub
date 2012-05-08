@@ -2,7 +2,7 @@
  * Adapter classes contain methods to construct Store objects for use by ui components.
  */
 Ext.define('changeset.data.GithubAdapter', {
-    require: ['changeset.model.Changeset', 'changeset.data.GithubProxy'],
+    require: ['changeset.model.Changeset', 'changeset.model.Comment', 'changeset.data.GithubProxy'],
     mixins: {
         observable: 'Ext.util.Observable',
         stateful: 'Ext.state.Stateful'
@@ -76,6 +76,7 @@ Ext.define('changeset.data.GithubAdapter', {
         this.mixins.stateful.constructor.apply(this, arguments);
 
         Ext.Ajax.on('beforerequest', this._onBeforeAjaxRequest, this);
+        Ext.Ajax.on('requestexception', this._onAjaxRequestException, this);
 
         this._init();
     },
@@ -253,25 +254,70 @@ Ext.define('changeset.data.GithubAdapter', {
     },
 
     /**
+     * Saves a comment
+     * @param data {Object} The comment data to save
+     * @param callback {Function} The callback to be executed when the save is complete.
+     * @param scope {Object} The scope to execute the callback in.
+     */
+    saveComment: function(data, callback, scope) {
+        var url = [
+            this.apiUrl,
+            'repos',
+            this._getRepoPath(),
+            'commits',
+            data.revision,
+            'comments'
+        ].join('/');
+
+        Ext.Ajax.request({
+            url: url,
+            method: 'POST',
+            stripRallyHeaders: true,
+            jsonData: {
+                body: data.comment,
+                commit_id: data.revision,
+                line: data.lineIdx,
+                path: data.filename,
+                position: data.diffIdx
+            },
+            success: function(response, opts) {
+                if (callback) {
+                    var data = Ext.decode(response.responseText);
+                    var record = new changeset.model.Comment(changeset.data.GithubProxy.extractCommentValues(data));
+                    callback.call(scope, record);
+                }
+            },
+            scope: this
+        });
+    },
+
+    /**
      * Grabs an OAuth token using the passed credentials.
      * If this is successful, it will fire the 'ready' event,
      * if it fails, it will refire 'authenticationrequired'.
      */
     authenticate: function(username, password) {
         this.username = username;
-        var encodedAuth = 'Basic ' + btoa(this.username + ':' + password);
+
         Ext.Ajax.request({
             url: this.apiUrl + '/authorizations',
-            method: 'POST',
+            method: 'GET',
             stripRallyHeaders: true,
             headers: {
-                Authorization: encodedAuth
+                Authorization: this._getBasicAuth(password)
             },
-            jsonData: {},
             success: function(response, opts) {
                 var data = Ext.decode(response.responseText);
-                this.authToken = data.token;
-                this.fireEvent('ready', this);
+                var tokenLength = data.length;
+                for (var i = 0; i < tokenLength; i++) {
+                    var token = data[i];
+                    if (token.note === 'RallyGithub') {
+                        this.authToken = token.token;
+                        this.fireEvent('ready', this);
+                        return;
+                    }
+                }
+                this._getNewToken(password);
             },
             failure: function(response, opts) {
                 this.fireEvent('authenticationrequired', this);
@@ -290,6 +336,40 @@ Ext.define('changeset.data.GithubAdapter', {
         this.authToken = null;
         Ext.state.Manager.getProvider().clear(this.getStateId());
         this.fireEvent('authenticationrequired', this);
+    },
+
+    /**
+     * Returns basic authentication details.
+     */
+    _getBasicAuth: function(password) {
+        return 'Basic ' + btoa(this.username + ':' + password);
+    },
+
+    /**
+     * Creates and uses a new OAuth token.
+     */
+    _getNewToken: function(password) {
+        Ext.Ajax.request({
+            url: this.apiUrl + '/authorizations',
+            method: 'POST',
+            stripRallyHeaders: true,
+            headers: {
+                Authorization: this._getBasicAuth(password)
+            },
+            jsonData: {
+                note: 'RallyGithub',
+                scopes: ['public_repo', 'repo']
+            },
+            success: function(response, opts) {
+                var data = Ext.decode(response.responseText);
+                this.authToken = data.token;
+                this.fireEvent('ready', this);
+            },
+            failure: function(response, opts) {
+                this.fireEvent('authenticationrequired', this);
+            },
+            scope: this
+        });
     },
 
     /**
@@ -316,8 +396,15 @@ Ext.define('changeset.data.GithubAdapter', {
 
     _onBeforeAjaxRequest: function(ext, opts) {
         this._stripRallyHeaders(opts);
-        if (!opts.headers.hasOwnProperty('Authorization')) {
+
+        if (!opts.headers.hasOwnProperty('Authorization') && this.authToken) {
             opts.headers.Authorization = 'token ' + this.authToken;
+        }
+    },
+
+    _onAjaxRequestException: function(conn, response, options, eOpts) {
+        if (response.status === 401) {
+            this.fireEvent('authenticationrequired', this);
         }
     },
 

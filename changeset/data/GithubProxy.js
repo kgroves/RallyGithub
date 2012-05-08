@@ -49,6 +49,7 @@ Ext.define('changeset.data.GithubProxy', {
         }
     },
 
+    cors: true,
     stripRallyHeaders: true,
     pageParam: 'page',
     limitParam: 'per_page',

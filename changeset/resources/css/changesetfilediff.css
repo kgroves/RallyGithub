@@ -23,24 +23,14 @@
     width: 35px;
 }
 
-.changeset-file-diff .x-panel-body{
-    border: 0;
-    border-top: 1px solid #aaa;
-}
-
-.changeset-file-diff .x-toolbar {
+.changeset-file-diff .x-toolbar.x-docked-top {
     background-color: #eee;
 }
 
-.changeset-file-diff .x-toolbar-item {
+.changeset-file-diff .x-toolbar.x-docked-top .x-toolbar-item {
     background: transparent;
     font-size: 16px;
     cursor: default;
-}
-
-.changeset-file-diff .line-add .x-panel-body,
-.changeset-file-diff .line-remove .x-panel-body {
-    background: transparent;
 }
 
 .changeset-file-diff .line-add, .changeset-file-diff .line-add th {
@@ -72,6 +62,24 @@
     margin: 5px;
 }
 
-.changeset-comment .x-panel-body {
+.changeset-comment .changeset-summary .x-panel-body {
     border: 0;
+}
+
+.changeset-file-diff .line-selected, .changeset-file-diff .line-selected th {
+    background: #eff8fb;
+}
+
+.changeset-file-diff .line-wrapper {
+    position: relative;
+}
+
+.changeset-file-diff .add-comment-icon {
+    position: absolute;
+    top: 2px;
+    left: 1px;
+}
+
+.changeset-file-diff .add-comment-icon-selected {
+    cursor: pointer;
 }

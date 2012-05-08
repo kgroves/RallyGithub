@@ -48,6 +48,7 @@
                     {name: 'filename', type: 'string'},
                     {name: 'lineNumber', type: 'string'},
                     {name: 'user', type: 'object'},
+                    {name: 'avatarUrl', type: 'string'},
                     {name: 'comment', type: 'string'},
                     {name: 'timestamp', type: 'date'}
                 ]
@@ -94,8 +95,8 @@
                  * @param {String|Int} lineNumber line number.
                  * @return {changeset.model.Comment}
                  */
-                getComment: function(path, lineNumber) {
-                    var key = this.getCommentKey(path, lineNumber);
+                getComments: function(path, lineNumber) {
+                    var key = this._getCommentKey(path, lineNumber);
                     return this.comments[key] || null;
                 },
                 
@@ -106,8 +107,11 @@
                 _getKeyedComments: function(store) {
                     var comments = {};
                     store.each(function(record) {
-                        var key = this._getCommentKey(record.get('path'), record.get('lineNumber'));
-                        comments[key] = record;
+                        var key = this._getCommentKey(record.get('filename'), record.get('lineNumber'));
+                        if (!comments.hasOwnProperty(key)) {
+                            comments[key] = [];
+                        }
+                        comments[key].push(record);
                     }, this);
                     return comments;
                 }
@@ -153,14 +157,16 @@
                             revision: data.commit_id,
                             filename: data.path,
                             lineNumber: data.position,
-                            comment: data.comment,
+                            comment: data.body,
                             timestamp: data.created_at,
-                            user: data.user
+                            user: data.user,
+                            avatarUrl: data.user ? data.user.avatar_url : null,
                         };
                         return output;
                     }
                 },
             
+                cors: true,
                 stripRallyHeaders: true,
                 pageParam: 'page',
                 limitParam: 'per_page',
@@ -243,6 +249,7 @@
                     this.mixins.stateful.constructor.apply(this, arguments);
             
                     Ext.Ajax.on('beforerequest', this._onBeforeAjaxRequest, this);
+                    Ext.Ajax.on('requestexception', this._onAjaxRequestException, this);
             
                     this._init();
                 },
@@ -420,25 +427,68 @@
                 },
             
                 /**
+                 * Saves a comment
+                 * @param data {Object} The comment data to save
+                 * @param callback {Function} The callback to be executed when the save is complete.
+                 * @param scope {Object} The scope to execute the callback in.
+                 */
+                saveComment: function(data, callback, scope) {
+                    console.log(data);
+                    var url = [
+                        this.apiUrl,
+                        'repos',
+                        this._getRepoPath(),
+                        'commits',
+                        data.revision,
+                        'comments'
+                    ].join('/');
+            
+                    Ext.Ajax.request({
+                        url: url,
+                        method: 'POST',
+                        stripRallyHeaders: true,
+                        jsonData: {
+                            body: data.comment,
+                            commit_id: data.revision,
+                            line: data.lineIdx,
+                            path: data.filename,
+                            position: data.diffIdx
+                        },
+                        success: function(response, opts) {
+                            console.log('got comment', response);
+                        },
+                        scope: this
+                    });
+                },
+            
+                /**
                  * Grabs an OAuth token using the passed credentials.
                  * If this is successful, it will fire the 'ready' event,
                  * if it fails, it will refire 'authenticationrequired'.
                  */
                 authenticate: function(username, password) {
                     this.username = username;
-                    var encodedAuth = 'Basic ' + btoa(this.username + ':' + password);
+            
                     Ext.Ajax.request({
                         url: this.apiUrl + '/authorizations',
-                        method: 'POST',
+                        method: 'GET',
                         stripRallyHeaders: true,
                         headers: {
-                            Authorization: encodedAuth
+                            Authorization: this._getBasicAuth(password)
                         },
-                        jsonData: {},
                         success: function(response, opts) {
                             var data = Ext.decode(response.responseText);
-                            this.authToken = data.token;
-                            this.fireEvent('ready', this);
+                            console.log(data);
+                            var tokenLength = data.length;
+                            for (var i = 0; i < tokenLength; i++) {
+                                var token = data[i];
+                                if (token.note === 'RallyGithub') {
+                                    this.authToken = token.token;
+                                    this.fireEvent('ready', this);
+                                    return;
+                                }
+                            }
+                            this._getNewToken(password);
                         },
                         failure: function(response, opts) {
                             this.fireEvent('authenticationrequired', this);
@@ -457,6 +507,40 @@
                     this.authToken = null;
                     Ext.state.Manager.getProvider().clear(this.getStateId());
                     this.fireEvent('authenticationrequired', this);
+                },
+            
+                /**
+                 * Returns basic authentication details.
+                 */
+                _getBasicAuth: function(password) {
+                    return 'Basic ' + btoa(this.username + ':' + password);
+                },
+            
+                /**
+                 * Creates and uses a new OAuth token.
+                 */
+                _getNewToken: function(password) {
+                    Ext.Ajax.request({
+                        url: this.apiUrl + '/authorizations',
+                        method: 'POST',
+                        stripRallyHeaders: true,
+                        headers: {
+                            Authorization: this._getBasicAuth(password)
+                        },
+                        jsonData: {
+                            note: 'RallyGithub',
+                            scopes: ['public_repo', 'repo']
+                        },
+                        success: function(response, opts) {
+                            var data = Ext.decode(response.responseText);
+                            this.authToken = data.token;
+                            this.fireEvent('ready', this);
+                        },
+                        failure: function(response, opts) {
+                            this.fireEvent('authenticationrequired', this);
+                        },
+                        scope: this
+                    });
                 },
             
                 /**
@@ -483,8 +567,15 @@
             
                 _onBeforeAjaxRequest: function(ext, opts) {
                     this._stripRallyHeaders(opts);
-                    if (!opts.headers.hasOwnProperty('Authorization')) {
+            
+                    if (!opts.headers.hasOwnProperty('Authorization') && this.authToken) {
                         opts.headers.Authorization = 'token ' + this.authToken;
+                    }
+                },
+            
+                _onAjaxRequestException: function(conn, response, options, eOpts) {
+                    if (response.status === 401) {
+                        this.fireEvent('authenticationrequired');
                     }
                 },
             
@@ -532,6 +623,59 @@
                         },
                         scope: this
                     });
+                }
+            });            Ext.define('changeset.ui.AddComment', {
+                extend: 'Ext.form.Panel',
+                alias: 'widget.addcomment',
+                cls: 'changeset-add-comment',
+                frame: true,
+                height: 135,
+                layout: 'anchor',
+                defaults: {
+                    anchor: '100%'
+                },
+            
+                adapter: null,
+            
+                items: [{
+                    xtype: 'textarea',
+                    name: 'comment',
+                    allowBlank: false,
+                    height: 90
+                }],
+            
+                buttonAlign: 'center',
+                buttons: [{
+                    xtype: 'rallybutton',
+                    itemId: 'SubmitButton',
+                    text: 'Save'
+                }, {
+                    xtype: 'rallybutton',
+                    itemId: 'CancelButton',
+                    ui: 'link',
+                    text: 'Cancel'
+                }],
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+            
+                    this.addEvents([
+                        /**
+                         * @event
+                         * fired when comment is saved.
+                         */
+                        'savecomment'
+                    ]);
+            
+                    this.mon(this.down('#SubmitButton'), 'click', this._onSubmitClick, this);
+                    this.mon(this.down('#CancelButton'), 'click', this.destroy, this);
+                },
+            
+                _onSubmitClick: function() {
+                    if (this.getForm().isValid()) {
+                        var values = this.getValues();
+                        this.fireEvent('saveComment', values.comment);
+                    }
                 }
             });            Ext.define('changeset.ui.Avatar', {
                 extend: 'Ext.Component',
@@ -602,6 +746,7 @@
                 }
             });            Ext.define('changeset.ui.ChangesetFileDiff', {
                 extend: 'Ext.panel.Panel',
+                require: ['changeset.ui.ChangesetSummary', 'changeset.ui.AddComment'],
                 alias: 'widget.changesetfilediff',
                 cls: 'changeset-file-diff',
                 bodyBorder: false,
@@ -645,8 +790,20 @@
                         }
                     ]);
             
+                    var source = this._renderSourceTable();
                     this.add({
-                        html: this._renderSourceTable()
+                        html: source[0],
+                        border: 0,
+                        listeners: {
+                            afterrender: function(cmp) {
+                                Ext.each(source[1], function(commentConfig){
+                                    Ext.create('changeset.ui.ChangesetSummary', commentConfig);
+                                });
+            
+                                cmp.getEl().on('mouseover', this._onLineOver, this, {delegate: '.line-code'});
+                            },
+                            scope: this
+                        }
                     });
                 },
             
@@ -655,49 +812,61 @@
                     if (diffLines[diffLines.length - 1] === "\ No newline at end of file") {
                         diffLines.pop();
                     }
-                    var lineDetails;
-                    var tableBody = ['<table><tbody>'];
-                    Ext.each(diffLines, function(line) {
+                    var lineDetails,
+                        commentConfigs = [],
+                        tableBody = ['<table><tbody>'];
+                    Ext.each(diffLines, function(line, lineIdx) {
                         if (!line) {
                             return;
                         }
                         lineDetails = this._getLineDetails(line, lineDetails);
-                        tableBody.push(this._renderDiffLine(line, lineDetails));
-                        var lineComment = this._renderDiffLineComment(lineDetails);
+                        tableBody.push(this._renderDiffLine(line, lineIdx, lineDetails));
+                        var lineComment = this._renderDiffLineComment(lineIdx, commentConfigs);
                         if (!Ext.isEmpty(lineComment)) {
                             tableBody.push(lineComment);
                         }
                     }, this);
                     tableBody.push('</tbody></table>');
-                    return tableBody.join("\n");
+                    return [tableBody.join("\n"), commentConfigs];
                 },
                 
-                _renderDiffLine: function (line, lineDetails) {
-                    var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
+                _renderDiffLine: function (line, lineIdx, lineDetails) {
+                    var row = [Ext.String.format('<tr class="{0} diff-idx-{1}">', lineDetails.lineCls, lineIdx)];
                     row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
                     row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
-                    row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
+                    row.push(Ext.String.format('<td><div class="line-wrapper"><pre class="prettyprint">{0}</pre></div></td>',
                         Ext.htmlEncode(line)));
                     row.push('</tr>');
                     return row.join('');
                 },
                 
-                _renderDiffLineComment: function(lineDetails) {
-                    if (lineDetails.newLineSymbol === '-') {
+                _renderDiffLineComment: function(lineIdx, commentConfigs) {
+                    var comments = this.commentLocator.getComments(
+                        this.record.get('filename'), lineIdx);
+                    
+                    if (!comments) {
                         return null;
                     }
                     
-                    var comment = this.commentLocator.getComment(
-                        this.record.get('filename'), lineDetails.newLineNumber);
-                    if (!comment) {
-                        return null;
-                    }
-                    
-                    var row = [Ext.String.format('<tr class="changeset-comment" >')];
-                    row.push('<th colspan="2">comment</th>');
-                    row.push(Ext.String.format('<td>{0}</td>', 'COMMENT!!'));
-                    row.push('</tr>');
-                    return row.join('');
+                    var commentRows = [];
+                    Ext.each(comments, function(comment, idx) {
+                        var commentId = this.record.get('filename') + '-' + lineIdx + '-' + idx,
+                            row = [Ext.String.format('<tr class="line-comment" >')];
+                        row.push('<th colspan="2">comment</th>');
+                        row.push(Ext.String.format('<td><div id="{0}" class="changeset-comment"></div></td>', commentId));
+                        row.push('</tr>');
+                        commentRows.push(row.join(''));
+                        
+                        commentConfigs.push({
+                            renderTo: commentId,
+                            record: comment,
+                            messageField: 'comment',
+                            userField: 'user',
+                            userNameField: 'login',
+                            revisionField: 'filename'
+                        });
+                    }, this);
+                    return commentRows.join('\n');
                 },
             
                 _getLineDetails: function(line, lineDetails) {
@@ -742,6 +911,8 @@
                         lineDetails.newLineSymbol = '-';
                         lineDetails.lineCls = 'line-remove';
                     }
+            
+                    lineDetails.lineCls += ' line-code line-idx-' + lineDetails.newLineNumber.toString();
                 },
             
                 _getLineType: function(line) {
@@ -753,6 +924,83 @@
                     }
             
                     return '=';
+                },
+            
+                _showAddComment: function(evt, target, options) {
+                    var lineEl = Ext.fly(target).up('tr');
+                    var commentEl = Ext.DomHelper.insertAfter(lineEl, {
+                        tag: 'tr',
+                        cls: 'line-comment',
+                        html: '<th colspan="2">comment</th><td><div class="changeset-add-comment"></div></td>'
+                    }, true);
+            
+                    var addCommentCmp = Ext.create('changeset.ui.AddComment', {
+                        renderTo: commentEl.down('.changeset-add-comment'),
+                        margin: 5,
+                        listeners: {
+                            savecomment: function(comment) {
+                                addCommentCmp.setLoading(true);
+            
+                                var lineIdx, diffIdx;
+                                Ext.each(lineEl.dom.className.split(' '), function(clsName) {
+                                    var lineMatch = clsName.match(/line\-idx\-(\d+)/),
+                                        diffMatch = clsName.match(/diff\-idx\-(\d+)/);
+                                    if (!Ext.isEmpty(lineMatch)) {
+                                        lineIdx = parseInt(lineMatch[1], 10);
+                                    } else if (!Ext.isEmpty(diffMatch)) {
+                                        diffIdx = parseInt(diffMatch[1], 10);
+                                    }
+                                });
+            
+                                var data = {
+                                    filename: this.record.get('filename'),
+                                    revision: this.up('changeset').record.get('revision'),
+                                    lineIdx: lineIdx,
+                                    diffIdx: diffIdx,
+                                    comment: comment
+                                };
+            
+                                console.log(this, this.adapter);
+                                this.adapter.saveComment(data, function() {console.log('got it!', arguments)}, this);
+                            },
+                            destroy: function() {
+                                commentEl.destroy();
+                            },
+                            scope: this
+                        }
+                    });
+                },
+            
+                _onLineOver: function(evt, target, options) {
+                    var el = Ext.get(target);
+                    el.on('mouseleave', Ext.bind(this._onLineOut, this, [el]), this, {single: true});
+                    el.addCls('line-selected');
+            
+                    var cellEl = el.down('.line-wrapper');
+                    var imgEl = cellEl.insertFirst({
+                        tag: 'img',
+                        src: 'https://rally1.rallydev.com/slm/js/alm/resources/themes/images/default/feedback/commentbubble.png',
+                        cls: 'add-comment-icon'
+                    });
+            
+                    imgEl.on('mouseover', function() {
+                        imgEl.addCls('add-comment-icon-selected');
+                    });
+            
+                    imgEl.on('mouseout', function() {
+                        imgEl.removeCls('add-comment-icon-selected');
+                    });
+            
+                    imgEl.on('click', this._showAddComment, this);
+            
+                },
+            
+                _onLineOut: function(el) {
+                    el.removeCls('line-selected');
+                    imgEl = el.down('.add-comment-icon');
+                    if (imgEl) {
+                        imgEl.destroy();
+                    }
                 }
             });            Ext.define('changeset.ui.ChangesetGrid', {
                 extend: 'Rally.ui.grid.Grid',
@@ -899,6 +1147,37 @@
                 alias: 'widget.changesetsummary',
                 cls: 'changeset-summary',
                 frame: true,
+                
+                /**
+                 * @cfg
+                 */
+                messageField: 'message',
+                
+                /**
+                 * @cfg
+                 */
+                avatarField: 'avatarUrl',
+                
+                /**
+                 * @cfg
+                 */
+                userField: 'author',
+                
+                /**
+                 * @cfg
+                 */
+                userNameField: 'name',
+                
+                /**
+                 * @cfg
+                 */
+                timestampField: 'timestamp',
+                
+                /**
+                 * @cfg
+                 */
+                revisionField: 'revision',
+                
                 dockedItems: [{
                     xtype: 'toolbar',
                     itemId: 'bottomToolbar',
@@ -916,10 +1195,10 @@
                         return;
                     }
             
-                    this.html = '<p>' + this.record.get('message') + '</p>';
+                    this.html = '<p>' + this.record.get(this.messageField) + '</p>';
             
                     var toolbar = this.getComponent('bottomToolbar');
-                    if (!Ext.isEmpty(this.record.get('avatarUrl'))) {
+                    if (!Ext.isEmpty(this.record.get(this.avatarField))) {
                         toolbar.add([{
                            margin: '2 6 2 2',
                            xtype: 'changesetavatar',
@@ -931,11 +1210,11 @@
             
                     toolbar.add([
                         {
-                            html: this.record.get('author').name
+                            html: this.record.get(this.userField)[this.userNameField]
                         },{
-                            html: Ext.Date.format(new Date(this.record.get('timestamp')), 'Y-m-d h:i:s A')
+                            html: Ext.Date.format(new Date(this.record.get(this.timestampField)), 'Y-m-d h:i:s A')
                         },{
-                            html: this.record.get('revision')
+                            html: this.record.get(this.revisionField)
                         }
                     ]);
                 }
@@ -980,20 +1259,20 @@
                 _loadComments: function() {
                     this.adapter.getCommentStore(this.record, function(store) {
                         store.on('load', this._onCommentStoreLoad, this);
+                        this.up('panel').setLoading(true, true);
                         store.load();
                     }, this);
                 },
                 
                 _onCommentStoreLoad: function(store) {
+                    var commentLocator = new changeset.data.CommentLocator(store);
                     this.adapter.getChangesetStore(this.record, function(store) {
                         if (!store) {
                             return;
                         }
                         
-                        var commentLocator = new changeset.data.CommentLocator(store);
                         var callback = Ext.bind(this._onChangesetStoreLoad, this, [commentLocator], true);
                         this.mon(store, 'load', callback, this, {single: true});
-                        this.up('panel').setLoading(true, true);
                         store.load();
                     }, this);
                 },
@@ -1011,10 +1290,12 @@
                     var addedCount = 0;
                     store.each(function(record) {
                         var task = new Ext.util.DelayedTask(function() {
+                            console.log(this, this.adapter);
                             this.add({
                                 xtype: 'changesetfilediff',
                                 margin: 10,
                                 border: 0,
+                                adapter: this.adapter,
                                 record: record,
                                 commentLocator: commentLocator,
                                 listeners: {
@@ -1250,19 +1531,19 @@
                     });
                 },
             
-                _onAdapterReady: function(adapter) {
+                _onAdapterReady: function() {
                     this.removeAll();
             
                     this.add({
                         xtype: 'changesetbrowser',
                         margin: '0 5 5 5',
                         border: 0,
-                        adapter: adapter,
+                        adapter: this.adapter,
                         flex: 1
                     });
                 },
             
-                _onAuthenticationRequired: function(adapter) {
+                _onAuthenticationRequired: function() {
                     this.removeAll();
                     this.add({
                         flex: 1,
@@ -1271,7 +1552,7 @@
                         items: [{
                             xtype: 'changesetlogin',
                             border: 0,
-                            adapter: adapter
+                            adapter: this.adapter
                         }]
                     });
                 }
@@ -1284,7 +1565,13 @@
     </script>
 
     <style type="text/css">
-        .pln{color:#000}@media screen{.str{color:#080}.kwd{color:#008}.com{color:#800}.typ{color:#606}.lit{color:#066}.pun,.opn,.clo{color:#660}.tag{color:#008}.atn{color:#606}.atv{color:#080}.dec,.var{color:#606}.fun{color:red}}@media print,projection{.str{color:#060}.kwd{color:#006;font-weight:bold}.com{color:#600;font-style:italic}.typ{color:#404;font-weight:bold}.lit{color:#044}.pun,.opn,.clo{color:#440}.tag{color:#006;font-weight:bold}.atn{color:#404}.atv{color:#060}}pre.prettyprint{padding:2px;border:1px solid #888}ol.linenums{margin-top:0;margin-bottom:0}li.L0,li.L1,li.L2,li.L3,li.L5,li.L6,li.L7,li.L8{list-style-type:none}li.L1,li.L3,li.L5,li.L7,li.L9{background:#eee}        .changeset-file-diff {
+        .pln{color:#000}@media screen{.str{color:#080}.kwd{color:#008}.com{color:#800}.typ{color:#606}.lit{color:#066}.pun,.opn,.clo{color:#660}.tag{color:#008}.atn{color:#606}.atv{color:#080}.dec,.var{color:#606}.fun{color:red}}@media print,projection{.str{color:#060}.kwd{color:#006;font-weight:bold}.com{color:#600;font-style:italic}.typ{color:#404;font-weight:bold}.lit{color:#044}.pun,.opn,.clo{color:#440}.tag{color:#006;font-weight:bold}.atn{color:#404}.atv{color:#060}}pre.prettyprint{padding:2px;border:1px solid #888}ol.linenums{margin-top:0;margin-bottom:0}li.L0,li.L1,li.L2,li.L3,li.L5,li.L6,li.L7,li.L8{list-style-type:none}li.L1,li.L3,li.L5,li.L7,li.L9{background:#eee}        .changeset-add-comment {
+            border-color: #999;
+        }
+        
+        .changeset-add-comment .x-panel, .changeset-add-comment .x-panel-body {
+            background-color: #eee
+        }        .changeset-file-diff {
             margin-top: 16px;
             border: 1px solid #aaa;
         }
@@ -1309,24 +1596,14 @@
             width: 35px;
         }
         
-        .changeset-file-diff .x-panel-body{
-            border: 0;
-            border-top: 1px solid #aaa;
-        }
-        
-        .changeset-file-diff .x-toolbar {
+        .changeset-file-diff .x-toolbar.x-docked-top {
             background-color: #eee;
         }
         
-        .changeset-file-diff .x-toolbar-item {
+        .changeset-file-diff .x-toolbar.x-docked-top .x-toolbar-item {
             background: transparent;
             font-size: 16px;
             cursor: default;
-        }
-        
-        .changeset-file-diff .line-add .x-panel-body,
-        .changeset-file-diff .line-remove .x-panel-body {
-            background: transparent;
         }
         
         .changeset-file-diff .line-add, .changeset-file-diff .line-add th {
@@ -1339,6 +1616,45 @@
         
         .changeset-file-diff .line-diff, .changeset-file-diff .line-diff th {
             background-color: #DDF;
+        }
+        
+        .changeset-file-diff .line-comment, .changeset-file-diff .line-comment th {
+            background-color: #fff9b1;
+        }
+        
+        .changeset-file-diff .line-comment {
+            border: 1px solid #aaa;
+            border-left: 0;
+        }
+        
+        .changeset-file-diff .line-comment th {
+            font-size: 12px;
+        }
+        
+        .changeset-comment {
+            margin: 5px;
+        }
+        
+        .changeset-comment .changeset-summary .x-panel-body {
+            border: 0;
+        }
+        
+        .changeset-file-diff .line-selected, .changeset-file-diff .line-selected th {
+            background: #eff8fb;
+        }
+        
+        .changeset-file-diff .line-wrapper {
+            position: relative;
+        }
+        
+        .changeset-file-diff .add-comment-icon {
+            position: absolute;
+            top: 2px;
+            left: 1px;
+        }
+        
+        .changeset-file-diff .add-comment-icon-selected {
+            cursor: pointer;
         }        .changeset-login {
             margin: 10px auto;
         }

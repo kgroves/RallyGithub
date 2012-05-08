@@ -38,6 +38,7 @@ Ext.define('changeset.ui.Changeset', {
     _loadComments: function() {
         this.adapter.getCommentStore(this.record, function(store) {
             store.on('load', this._onCommentStoreLoad, this);
+            this.up('panel').setLoading(true, true);
             store.load();
         }, this);
     },
@@ -51,7 +52,6 @@ Ext.define('changeset.ui.Changeset', {
             
             var callback = Ext.bind(this._onChangesetStoreLoad, this, [commentLocator], true);
             this.mon(store, 'load', callback, this, {single: true});
-            this.up('panel').setLoading(true, true);
             store.load();
         }, this);
     },
@@ -73,6 +73,7 @@ Ext.define('changeset.ui.Changeset', {
                     xtype: 'changesetfilediff',
                     margin: 10,
                     border: 0,
+                    adapter: this.adapter,
                     record: record,
                     commentLocator: commentLocator,
                     listeners: {
