@@ -2,7 +2,7 @@
  * Adapter classes contain methods to construct Store objects for use by ui components.
  */
 Ext.define('changeset.data.GithubAdapter', {
-    require: ['changeset.model.Changeset', 'changeset.data.GithubProxy'],
+    require: ['changeset.model.Changeset', 'changeset.model.Comment', 'changeset.data.GithubProxy'],
     mixins: {
         observable: 'Ext.util.Observable',
         stateful: 'Ext.state.Stateful'
@@ -37,6 +37,12 @@ Ext.define('changeset.data.GithubAdapter', {
      * Base url for all Github api requests.
      */
     apiUrl: 'https://api.github.com',
+    
+    /**
+     * @cfg
+     * Maximum pageSize allowed by api.
+     */
+    maxPageSize: 100,
 
     /**
      * stateful configs
@@ -70,6 +76,7 @@ Ext.define('changeset.data.GithubAdapter', {
         this.mixins.stateful.constructor.apply(this, arguments);
 
         Ext.Ajax.on('beforerequest', this._onBeforeAjaxRequest, this);
+        Ext.Ajax.on('requestexception', this._onAjaxRequestException, this);
 
         this._init();
     },
@@ -217,6 +224,72 @@ Ext.define('changeset.data.GithubAdapter', {
 
         callback.call(scope, store);
     },
+    
+    /**
+     * Returns a store which populates comment models.
+     */
+    getCommentStore: function(record, callback, scope) {
+        var url = [
+            this.apiUrl,
+            'repos',
+            this._getRepoPath(),
+            'commits',
+            record.get('revision'),
+            'comments'
+        ].join('/');
+
+        var store = Ext.create('Ext.data.Store', {
+            model: 'changeset.model.Comment',
+            pageSize: this.maxPageSize,
+            proxy: Ext.create('changeset.data.GithubProxy', {
+                url: url,
+                reader: {
+                    type: 'json',
+                    extractValues: changeset.data.GithubProxy.extractCommentValues
+                }
+            })
+        });
+        
+        callback.call(scope, store);
+    },
+
+    /**
+     * Saves a comment
+     * @param data {Object} The comment data to save
+     * @param callback {Function} The callback to be executed when the save is complete.
+     * @param scope {Object} The scope to execute the callback in.
+     */
+    saveComment: function(data, callback, scope) {
+        var url = [
+            this.apiUrl,
+            'repos',
+            this._getRepoPath(),
+            'commits',
+            data.revision,
+            'comments'
+        ].join('/');
+
+        Ext.Ajax.request({
+            url: url,
+            method: 'POST',
+            stripRallyHeaders: true,
+            jsonData: {
+                body: data.comment,
+                commit_id: data.revision,
+                line: data.lineIdx,
+                path: data.filename,
+                position: data.diffIdx
+            },
+            success: function(response, opts) {
+                if (callback) {
+                    var data = Ext.decode(response.responseText);
+                    var record = new changeset.model.Comment(changeset.data.GithubProxy.extractCommentValues(data));
+                    callback.call(scope, record);
+                }
+            },
+            scope: this
+        });
+    },
 
     /**
      * Grabs an OAuth token using the passed credentials.
@@ -225,19 +298,26 @@ Ext.define('changeset.data.GithubAdapter', {
      */
     authenticate: function(username, password) {
         this.username = username;
-        var encodedAuth = 'Basic ' + btoa(this.username + ':' + password);
+
         Ext.Ajax.request({
             url: this.apiUrl + '/authorizations',
-            method: 'POST',
+            method: 'GET',
             stripRallyHeaders: true,
             headers: {
-                Authorization: encodedAuth
+                Authorization: this._getBasicAuth(password)
             },
-            jsonData: {},
             success: function(response, opts) {
                 var data = Ext.decode(response.responseText);
-                this.authToken = data.token;
-                this.fireEvent('ready', this);
+                var tokenLength = data.length;
+                for (var i = 0; i < tokenLength; i++) {
+                    var token = data[i];
+                    if (token.note === 'RallyGithub') {
+                        this.authToken = token.token;
+                        this.fireEvent('ready', this);
+                        return;
+                    }
+                }
+                this._getNewToken(password);
             },
             failure: function(response, opts) {
                 this.fireEvent('authenticationrequired', this);
@@ -259,6 +339,40 @@ Ext.define('changeset.data.GithubAdapter', {
     },
 
     /**
+     * Returns basic authentication details.
+     */
+    _getBasicAuth: function(password) {
+        return 'Basic ' + btoa(this.username + ':' + password);
+    },
+
+    /**
+     * Creates and uses a new OAuth token.
+     */
+    _getNewToken: function(password) {
+        Ext.Ajax.request({
+            url: this.apiUrl + '/authorizations',
+            method: 'POST',
+            stripRallyHeaders: true,
+            headers: {
+                Authorization: this._getBasicAuth(password)
+            },
+            jsonData: {
+                note: 'RallyGithub',
+                scopes: ['public_repo', 'repo']
+            },
+            success: function(response, opts) {
+                var data = Ext.decode(response.responseText);
+                this.authToken = data.token;
+                this.fireEvent('ready', this);
+            },
+            failure: function(response, opts) {
+                this.fireEvent('authenticationrequired', this);
+            },
+            scope: this
+        });
+    },
+
+    /**
      * Removes Rally specific headers from Ajax request options.
      */
     _stripRallyHeaders: function(opts) {
@@ -269,12 +383,9 @@ Ext.define('changeset.data.GithubAdapter', {
     },
 
     _getRepoPath: function() {
-        return this.repository.owner.login + '/' + this.repository.name
+        return this.repository.owner.login + '/' + this.repository.name;
     },
 
-    /**
-     * Initializes the adapter.
-     */
     _init: function() {
         if (!Ext.isEmpty(this.authToken)) {
             this.fireEvent('ready', this);
@@ -285,8 +396,15 @@ Ext.define('changeset.data.GithubAdapter', {
 
     _onBeforeAjaxRequest: function(ext, opts) {
         this._stripRallyHeaders(opts);
-        if (!opts.headers.hasOwnProperty('Authorization')) {
-            opts.headers["Authorization"] = 'token ' + this.authToken;
+
+        if (!opts.headers.hasOwnProperty('Authorization') && this.authToken) {
+            opts.headers.Authorization = 'token ' + this.authToken;
+        }
+    },
+
+    _onAjaxRequestException: function(conn, response, options, eOpts) {
+        if (response.status === 401) {
+            this.fireEvent('authenticationrequired', this);
         }
     },
 
@@ -298,7 +416,7 @@ Ext.define('changeset.data.GithubAdapter', {
             'commits'
         ].join('/');
 
-        var store = Ext.create('Ext.data.Store', {
+        var branchStore = Ext.create('Ext.data.Store', {
             model: 'changeset.model.Commit',
             proxy: Ext.create('changeset.data.GithubProxy', {
                 url: url,
@@ -311,7 +429,7 @@ Ext.define('changeset.data.GithubAdapter', {
                 }
             })
         });
-        callback.call(scope, store);
+        callback.call(scope, branchStore);
     },
 
     _getChangeset: function(record, callback, scope) {
@@ -330,7 +448,7 @@ Ext.define('changeset.data.GithubAdapter', {
             jsonData: {},
             success: function(response, opts) {
                 var data = Ext.decode(response.responseText);
-                callback.call(scope, data)
+                callback.call(scope, data);
             },
             scope: this
         });

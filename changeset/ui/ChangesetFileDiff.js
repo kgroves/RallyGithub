@@ -1,5 +1,6 @@
 Ext.define('changeset.ui.ChangesetFileDiff', {
     extend: 'Ext.panel.Panel',
+    require: ['changeset.ui.ChangesetSummary', 'changeset.ui.AddComment'],
     alias: 'widget.changesetfilediff',
     cls: 'changeset-file-diff',
     bodyBorder: false,
@@ -9,7 +10,19 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         dock: 'top'
     }],
 
+    /**
+     * @cfg
+     * @private
+     * 
+     * Regex used to parse unified diff delimiter.
+     */
     unifiedDiffRegex: /^@@\s\-(\d+)(,\d+)?\s\+(\d+)(,\d+)?\s@@/,
+    
+    /**
+     * @cfg {changeset.data.CommentLocator}
+     * Comments attached to this commit. Rendered inline.
+     */
+    commentLocator: null,
 
     initComponent: function() {
         this.callParent(arguments);
@@ -31,8 +44,22 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
             }
         ]);
 
+        var source = this._renderSourceTable();
         this.add({
-            html: this._renderSourceTable()
+            html: source[0],
+            autoScroll: true,
+            border: 0,
+            listeners: {
+                afterrender: function(cmp) {
+                    Ext.each(source[1], function(commentConfig){
+                        Ext.apply(commentConfig, {width: this._getCommentWidth()});
+                        Ext.create('changeset.ui.ChangesetSummary', commentConfig);
+                    }, this);
+
+                    cmp.getEl().on('mouseover', this._onLineOver, this, {delegate: '.line-code'});
+                },
+                scope: this
+            }
         });
     },
 
@@ -41,23 +68,61 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         if (diffLines[diffLines.length - 1] === "\\ No newline at end of file") {
             diffLines.pop();
         }
-        var lineDetails;
-        var tableBody = ['<table><tbody>'];
-        Ext.each(diffLines, function(line) {
+        var lineDetails,
+            commentConfigs = [],
+            tableBody = ['<table><tbody>'];
+        Ext.each(diffLines, function(line, lineIdx) {
             if (!line) {
                 return;
             }
             lineDetails = this._getLineDetails(line, lineDetails);
-            var row = [Ext.String.format('<tr class="{0}">', lineDetails.lineCls)];
-            row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
-            row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
-            row.push(Ext.String.format('<td><pre class="prettyprint">{0}</pre></td>',
-                Ext.htmlEncode(line)));
-            row.push('</tr>');
-            tableBody.push(row.join(''));
+            tableBody.push(this._renderDiffLine(line, lineIdx, lineDetails));
+            var lineComment = this._renderDiffLineComment(lineIdx, commentConfigs);
+            if (!Ext.isEmpty(lineComment)) {
+                tableBody.push(lineComment);
+            }
         }, this);
         tableBody.push('</tbody></table>');
-        return tableBody.join("\n");
+        return [tableBody.join("\n"), commentConfigs];
+    },
+    
+    _renderDiffLine: function (line, lineIdx, lineDetails) {
+        var row = [Ext.String.format('<tr class="{0} diff-idx-{1}">', lineDetails.lineCls, lineIdx)];
+        row.push(Ext.String.format('<th>{0}</th>', lineDetails.oldLineSymbol));
+        row.push(Ext.String.format('<th>{0}</th>', lineDetails.newLineSymbol));
+        row.push(Ext.String.format('<td><div class="line-wrapper"><pre class="prettyprint">{0}</pre></div></td>',
+            Ext.htmlEncode(line)));
+        row.push('</tr>');
+        return row.join('');
+    },
+    
+    _renderDiffLineComment: function(lineIdx, commentConfigs) {
+        var comments = this.commentLocator.getComments(
+            this.record.get('filename'), lineIdx);
+        
+        if (!comments) {
+            return null;
+        }
+        
+        var commentRows = [];
+        Ext.each(comments, function(comment, idx) {
+            var commentId = this.record.get('filename') + '-' + lineIdx + '-' + idx,
+                row = [Ext.String.format('<tr class="line-comment" >')];
+            row.push('<th colspan="2">comment</th>');
+            row.push(Ext.String.format('<td><div id="{0}" class="changeset-comment"></div></td>', commentId));
+            row.push('</tr>');
+            commentRows.push(row.join(''));
+
+            commentConfigs.push({
+                renderTo: commentId,
+                record: comment,
+                messageField: 'comment',
+                userField: 'user',
+                userNameField: 'login',
+                revisionField: 'filename'
+            });
+        }, this);
+        return commentRows.join('\n');
     },
 
     _getLineDetails: function(line, lineDetails) {
@@ -69,7 +134,7 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
                 oldLineSymbol: 'old',
                 newLineSymbol: 'new',
                 lineCls: 'line-diff'
-            }
+            };
         } else {
             var lineType = this._getLineType(line);
             if (lineType === '+') {
@@ -102,6 +167,8 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
             lineDetails.newLineSymbol = '-';
             lineDetails.lineCls = 'line-remove';
         }
+
+        lineDetails.lineCls += ' line-code line-idx-' + lineDetails.newLineNumber.toString();
     },
 
     _getLineType: function(line) {
@@ -113,5 +180,135 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
         }
 
         return '=';
+    },
+
+    _showAddComment: function(evt, target, options) {
+        // close existing comment
+        if (this.addCommentCmp) {
+            this.addCommentCmp.fireEvent('cancel', this.addCommentCmp);
+        }
+
+        var lineEl = Ext.get(target).up('tr');
+        var afterEl = lineEl;
+        var nextTr = lineEl.dom.nextSibling;
+        while (nextTr && (nextTr.nodeType !== 1 || nextTr.className.match(/line\-comment/))) {
+            afterEl = Ext.fly(nextTr);
+            nextTr = nextTr.nextSibling;
+        }
+
+        var commentEl = Ext.DomHelper.insertAfter(afterEl, {
+            tag: 'tr',
+            cls: 'line-comment',
+            html: '<th colspan="2">comment</th><td><div class="changeset-add-comment"></div></td>'
+        }, true);
+        commentEl.scrollIntoView(commentEl.up('.x-accordion-body'), false);
+
+        this.addCommentCmp = Ext.create('changeset.ui.AddComment', {
+            renderTo: commentEl.down('.changeset-add-comment'),
+            margin: 5,
+            width: this._getCommentWidth(),
+            listeners: {
+                save: Ext.bind(this._onSaveComment, this, [lineEl], true),
+                cancel: this._onCancelComment,
+                afterrender: function() {
+                    this.doLayout();
+                },
+                destroy: function() {
+                    this.addCommentCmp = null;
+                },
+                scope: this
+            }
+        });
+    },
+
+    _getCommentWidth: function() {
+        var borderWidth = 1,
+            borderCount = 5,
+            thWidth = 35,
+            thCount = 2,
+            paddingWidth = 5;
+        return this.getWidth() - (borderWidth * borderCount) - (thWidth * thCount) - (paddingWidth * 2);
+    },
+
+    _onSaveComment: function(cmp, comment, options, lineEl) {
+        cmp.setLoading(true);
+
+        var lineIdx, diffIdx;
+        Ext.each(lineEl.dom.className.split(' '), function(clsName) {
+            var lineMatch = clsName.match(/line\-idx\-(\d+)/),
+                diffMatch = clsName.match(/diff\-idx\-(\d+)/);
+            if (!Ext.isEmpty(lineMatch)) {
+                lineIdx = parseInt(lineMatch[1], 10);
+            } else if (!Ext.isEmpty(diffMatch)) {
+                diffIdx = parseInt(diffMatch[1], 10);
+            }
+        });
+
+        var data = {
+            filename: this.record.get('filename'),
+            revision: this.up('changeset').record.get('revision'),
+            lineIdx: lineIdx,
+            diffIdx: diffIdx,
+            comment: comment
+        };
+
+        this.adapter.saveComment(data, function(record) {
+            var commentEl = cmp.getEl().up('td').insertFirst({tag: 'div', cls: 'changeset-comment'});
+            cmp.destroy();
+
+            Ext.create('changeset.ui.ChangesetSummary', {
+                renderTo: commentEl,
+                width: this._getCommentWidth(),
+                record: record,
+                messageField: 'comment',
+                userField: 'user',
+                userNameField: 'login',
+                revisionField: 'filename',
+                listeners: {
+                    afterrender: function() {
+                        this.doLayout();
+                    },
+                    scope: this
+                }
+            });
+        }, this);
+    },
+
+    _onCancelComment: function(cmp) {
+        var rowEl = cmp.getEl().up('tr');
+        cmp.destroy();
+        rowEl.destroy();
+        this.doLayout();
+    },
+
+    _onLineOver: function(evt, target, options) {
+        var el = Ext.get(target);
+        el.on('mouseleave', Ext.bind(this._onLineOut, this, [el]), this, {single: true});
+        el.addCls('line-selected');
+
+        var cellEl = el.down('.line-wrapper');
+        var imgEl = cellEl.insertFirst({
+            tag: 'img',
+            src: 'https://rally1.rallydev.com/slm/js/alm/resources/themes/images/default/feedback/commentbubble.png',
+            cls: 'add-comment-icon'
+        });
+
+        imgEl.on('mouseover', function() {
+            imgEl.addCls('add-comment-icon-selected');
+        });
+
+        imgEl.on('mouseout', function() {
+            imgEl.removeCls('add-comment-icon-selected');
+        });
+
+        imgEl.on('click', this._showAddComment, this);
+    },
+
+    _onLineOut: function(el) {
+        el.removeCls('line-selected');
+        imgEl = el.down('.add-comment-icon');
+        if (imgEl) {
+            imgEl.destroy();
+        }
     }
 });

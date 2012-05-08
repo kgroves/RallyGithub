@@ -33,7 +33,6 @@ Ext.define('CustomApp', {
 
     _onAdapterReady: function(adapter) {
         this.removeAll();
-
         this.add({
             xtype: 'changesetbrowser',
             margin: '0 5 5 5',
@@ -48,7 +47,7 @@ Ext.define('CustomApp', {
         this.add({
             flex: 1,
             border: 0,
-            adapter: this.adapter,
+            adapter: adapter,
             items: [{
                 xtype: 'changesetlogin',
                 border: 0,

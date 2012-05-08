@@ -3,7 +3,7 @@ Ext.define('changeset.data.GithubProxy', {
 
     statics: {
         /**
-         * Build Commit record from Github api data.
+         * extract functions are used to normalize data objects
          */
         extractCommitValues: function(data) {
             var output = {
@@ -19,7 +19,7 @@ Ext.define('changeset.data.GithubProxy', {
                 Ext.apply(output, commit);
                 output.timestamp = commit.author.date;
             }
-            return output
+            return output;
         },
 
         extractChangesetFileValues: function(data) {
@@ -33,9 +33,23 @@ Ext.define('changeset.data.GithubProxy', {
                 diff: data.patch
             };
             return output;
+        },
+        
+        extractCommentValues: function(data) {
+            var output = {
+                revision: data.commit_id,
+                filename: data.path,
+                lineNumber: data.position,
+                comment: data.body,
+                timestamp: data.created_at,
+                user: data.user,
+                avatarUrl: data.user ? data.user.avatar_url : null,
+            };
+            return output;
         }
     },
 
+    cors: true,
     stripRallyHeaders: true,
     pageParam: 'page',
     limitParam: 'per_page',

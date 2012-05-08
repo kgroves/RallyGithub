@@ -1,6 +1,11 @@
 Ext.define('changeset.ui.Changeset', {
     extend: 'Ext.panel.Panel',
-    require: ['changeset.ui.ChangesetSummary'],
+    require: [
+        'changeset.data.CommentLocator',
+        'changeset.ui.ChangesetSummary',
+        'changeset.ui.ChangesetFileDiff',
+        'changeset.ui.ChangesetFilesGrid'
+    ],
     alias: 'widget.changeset',
     cls: 'changeset',
 
@@ -27,22 +32,31 @@ Ext.define('changeset.ui.Changeset', {
             record: this.record
         });
 
-        this._loadChangesetStore();
+        this._loadComments();
     },
-
-    _loadChangesetStore: function() {
-        this.adapter.getChangesetStore(this.record, function(store) {
-            if (!store) {
-                return;
-            }
-
-            this.mon(store, 'load', this._onChangesetStoreLoad, this, {single: true});
+    
+    _loadComments: function() {
+        this.adapter.getCommentStore(this.record, function(store) {
+            store.on('load', this._onCommentStoreLoad, this);
             this.up('panel').setLoading(true, true);
             store.load();
         }, this);
     },
+    
+    _onCommentStoreLoad: function(store) {
+        var commentLocator = new changeset.data.CommentLocator(store);
+        this.adapter.getChangesetStore(this.record, function(store) {
+            if (!store) {
+                return;
+            }
+            
+            var callback = Ext.bind(this._onChangesetStoreLoad, this, [commentLocator], true);
+            this.mon(store, 'load', callback, this, {single: true});
+            store.load();
+        }, this);
+    },
 
-    _onChangesetStoreLoad: function(store) {
+    _onChangesetStoreLoad: function(store, records, scope, opts, commentLocator) {
         var grid = this.insert( 1,
             {
                 xtype: 'changesetfilesgrid',
@@ -59,7 +73,9 @@ Ext.define('changeset.ui.Changeset', {
                     xtype: 'changesetfilediff',
                     margin: 10,
                     border: 0,
+                    adapter: this.adapter,
                     record: record,
+                    commentLocator: commentLocator,
                     listeners: {
                         afterrender: {
                             fn: function() {
@@ -77,5 +93,5 @@ Ext.define('changeset.ui.Changeset', {
             }, this);
             task.delay(10);
         }, this);
-    }
+    },
 });
