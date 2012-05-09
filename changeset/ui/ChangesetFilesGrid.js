@@ -44,7 +44,8 @@ Ext.define('changeset.ui.ChangesetFilesGrid', {
         config = config || {};
         Ext.applyIf(config, {
             columnCfgs: this.columnCfgs,
-            storeConfig: this.storeConfig
+            storeConfig: this.storeConfig,
+            showPagingToolbar: false
         });
 
         this.callParent([config]);
