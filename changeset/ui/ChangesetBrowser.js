@@ -50,8 +50,12 @@ Ext.define('changeset.ui.ChangesetBrowser', {
     },
 
     _addFilter: function() {
+        if (this.down('changesetfilter')) {
+            return;
+        }
+
         var toolbar = this.down('#topToolbar');
-        var filter = toolbar.add({
+        var filter = toolbar.insert(3, {
             xtype: 'changesetfilter',
             width: 210,
             listeners: {
@@ -72,7 +76,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
         var toolbar = this.down('#topToolbar');
         var valueField = 'name';
         this.adapter.getRepositoryStore(function(store) {
-            var combo = toolbar.add({
+            var combo = toolbar.insert(1, {
                 xtype: 'rallycombobox',
                 margin: '0 5 0 0',
                 store: store,
@@ -114,7 +118,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
 
         var valueField = 'name';
         this.adapter.getBranchStore(function(store) {
-            combo = toolbar.add({
+            combo = toolbar.insert(2, {
                 xtype: 'rallycombobox',
                 itemId: 'branchChooser',
                 margin: '0 5 0 0',
