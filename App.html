@@ -228,7 +228,7 @@
                  * @cfg
                  * Page size to use for api calls.
                  */
-                pageSize: 10,
+                pageSize: 100,
             
                 /**
                  * stateful configs
@@ -606,6 +606,7 @@
                         startSha: this.branch.commit.sha,
                         pageSize: this.pageSize,
                         clearOnPageLoad: false,
+                        filterOnLoad: false,
                         proxy: Ext.create('changeset.data.github.Proxy', {
                              url: url,
                              reader: {
@@ -659,17 +660,43 @@
                  */
                 loadPage: function(page, options) {
                     this._addShaToOptions(page);
-                    return this.callParent(arguments)
+                    if (page > 1) {
+                        // temporarily increase page size since we will get a duplicate commit back.
+                        this.pageSize++;
+                    }
+                    var result = this.callParent(arguments);
+                    if (page > 1) {
+                        this.pageSize--;
+                    }
+                    return result;
+                },
+            
+                /**
+                 * Overridden to remove duplicate row.
+                 * @private
+                 */
+                onProxyLoad: function(operation) {
+                    if (operation && operation.page > 1 && operation.resultSet) {
+                        var resultSet = operation.resultSet;
+                        if (resultSet.records && resultSet.records.length > 0) {
+                            resultSet.records.shift();
+                            resultSet.count--;
+                            resultSet.total--;
+                            resultSet.totalRecords--;
+                        }
+                    }
+                    return this.callParent(arguments);
                 },
             
                 _addShaToOptions: function(page) {
                     if (this.proxy) {
-                        var sha;
+                        var sha,
+                            data = this.snapshot || this.data;
                         if (page === 1) {
                             sha = this.startSha;
                         } else {
                             var lastCommitIdx = ((page - 1) * this.pageSize) - 1;
-                            var lastCommit = this.getAt(lastCommitIdx);
+                            var lastCommit = data.getAt(lastCommitIdx);
                             sha = lastCommit.get('revision');
                         }
             
@@ -792,8 +819,6 @@
                 }],
             
                 initComponent: function() {
-                    console.log(this.adapter);
-            
                     this.callParent(arguments);
                     this.insert(0, {
                         html: '<span class="login-message">' + this.adapter.getLoginMessage() + '</span>',
@@ -801,10 +826,17 @@
                         margin: '0 0 20 0'
                     });
             
-                    this.mon(this.down('#LoginButton'), 'click', this._onLoginClick, this);
+                    this.mon(this.down('#LoginButton'), 'click', this._onSubmit, this);
+                    Ext.each(this.query('textfield'), function(textfield) {
+                        textfield.on('specialkey', function(field, evt) {
+                            if (evt.getKey() === evt.ENTER) {
+                                this._onSubmit();
+                            }
+                        }, this);
+                    }, this);
                 },
             
-                _onLoginClick: function() {
+                _onSubmit: function() {
                     if (this.getForm().isValid()) {
                         var values = this.getValues();
                         this.adapter.authenticate(values.username, values.password);
@@ -829,47 +861,32 @@
                     margin: '0 0 0 4'
                 }],
             
-                initComponent: function() {
+                constructor: function() {
                     this.callParent(arguments);
-                    this.mon(this.down('#FilterButton'), 'click', this._onFilterClick, this, {});
+            
+                    this.addEvents([
+                        /**
+                         * @event
+                         * fired when the filter button is clicked.
+                         */
+                        'filter'
+                    ]);
                 },
             
-                _onFilterClick: function() {
+                initComponent: function() {
+                    this.callParent(arguments);
+            
+                    this.mon(this.down('#FilterButton'), 'click', this._onSubmit, this, {});
+                    this.mon(this.down('#FilterText'), 'specialkey', function(field, evt) {
+                        if (evt.getKey() === evt.ENTER) {
+                            this._onSubmit();
+                        }
+                    }, this);
+                },
+            
+                _onSubmit: function() {
                     var value = Ext.String.escape(this.down('#FilterText').getValue());
-                    var grid = Ext.ComponentQuery.query('changesetgrid')[0];
-            
-                    if(!(value && grid)) {
-                        return;
-                    }
-            
-                    var filter = Ext.create('Ext.util.Filter', {
-                        property: 'message',
-                        root: 'data',
-                        anyMatch: true,
-                        value: value
-                    });
-                    grid.getStore().clearFilter();
-                    grid.getStore().filter([filter]);
-            
-                    if( !this.down('#ClearButton') ) {
-                        this.add({
-                            xtype: 'rallybutton',
-                            itemId: 'ClearButton',
-                            text: 'Clear Filter',
-                            margin: '0 0 0 4',
-                            listeners: {
-                                click: {
-                                    fn: function() {
-                                        var grid = Ext.ComponentQuery.query('changesetgrid')[0];
-                                        grid.getStore().clearFilter();
-                                        this.down('#FilterText').setValue('');
-                                        this.remove(this.down('#ClearButton'));
-                                    }
-                                },
-                                scope: this
-                            }
-                        });
-                    }
+                    this.fireEvent('filter', value);
                 }
             });            Ext.define('changeset.ui.ChangesetFileDiff', {
                 extend: 'Ext.panel.Panel',
@@ -1270,10 +1287,42 @@
                     this.on('render', this._onRender, this);
                     this.down('#loadButton').on('click', this._loadMore, this);
                     this.mon(this.store, 'load', this._onStoreLoad, this);
+                    this.mon(this.store, 'datachanged', this._onStoreDataChanged, this);
+                },
+            
+                setCommitFilter: function(value) {
+                    var store = this.store;
+                    this.filteredRowCount = null;
+                    if (Ext.isEmpty(value)) {
+                        this.commitFilter = null;
+                        store.clearFilter();
+                    } else {
+                        var regex = new RegExp(value, 'i');
+                        this.commitFilter = {
+                            filterFn: function(record) {
+                                if (regex.test(record.get('message'))) {
+                                    return true;
+                                } else if (regex.test(record.get('author').name)) {
+                                    return true;
+                                } else if (regex.test(record.get('revision'))) {
+                                    return true;
+                                }
+            
+                                return false;
+                            }
+                        };
+            
+                        store.clearFilter(true);
+                        store.filter(this.commitFilter);
+                    }
                 },
             
                 _loadMore: function() {
-                    this.store.nextPage();
+                    if (this.down('#loadButton')) {
+                        var store = this.store;
+                        store.clearFilter(true);
+                        store.nextPage();
+                    }
                 },
             
                 _onRender: function() {
@@ -1291,10 +1340,33 @@
                     this.fireEvent('revisionClicked', record);
                 },
             
-                _onStoreLoad: function() {
-                    // If the count is divisible by the pagesize, we've run out of pages.
-                    if (this.store.count() % this.store.pageSize) {
+                _onStoreLoad: function(store, records) {
+                    // Scroll to first new row.
+                    if (records.length > 0) {
+                        var rowIdx = store.indexOf(records[0]);
+                        if (rowIdx) {
+                            this.getView().focusRow(rowIdx);
+                        }
+                    }
+            
+                    // If the count is less than the pagesize we've run out of pages.
+                    if (records.length < store.pageSize) {
                         this.down('#loadButton').destroy();
+                    }
+            
+                    if (this.commitFilter) {
+                        store.filter(this.commitFilter);
+                    }
+                },
+            
+                _onStoreDataChanged: function() {
+                    var store = this.store;
+                    if (store.isFiltered()) {
+                        var filteredRowCount = store.data.getCount();
+                        if (filteredRowCount < 1 || (this.filteredRowCount && this.filteredRowCount >= filteredRowCount)) {
+                            this._loadMore();
+                        }
+                        this.filteredRowCount = filteredRowCount;
                     }
                 }
             });            Ext.define('changeset.ui.ChangesetFilesGrid', {
@@ -1343,7 +1415,8 @@
                     config = config || {};
                     Ext.applyIf(config, {
                         columnCfgs: this.columnCfgs,
-                        storeConfig: this.storeConfig
+                        storeConfig: this.storeConfig,
+                        showPagingToolbar: false
                     });
             
                     this.callParent([config]);
@@ -1526,7 +1599,13 @@
             });            Ext.define('changeset.ui.ChangesetBrowser', {
                 extend: 'Ext.panel.Panel',
                 alias: 'widget.changesetbrowser',
-                require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset', 'changeset.ui.ChangesetFilter', 'Rally.ui.ComboBox'],
+                require: [
+                    'changeset.ui.ChangesetGrid',
+                    'changeset.ui.Changeset',
+                    'changeset.ui.ChangesetFilter',
+                    'Rally.ui.ComboBox',
+                    'Rally.ui.tooltip.ToolTip'
+                ],
                 cls: 'changeset-browser',
                 border: 0,
                 bodyBorder: false,
@@ -1557,7 +1636,7 @@
                         items: [{
                             xtype: 'rallybutton',
                             text: 'Logout',
-                            margin: '0 10 0 0 ',
+                            margin: '0 5 0 0 ',
                             handler: function() {
                                 this.adapter.logout();
                             },
@@ -1572,7 +1651,18 @@
                     var toolbar = this.down('#topToolbar');
                     var filter = toolbar.add({
                         xtype: 'changesetfilter',
-                        width: 210
+                        width: 210,
+                        listeners: {
+                            filter: this._onFilter,
+                            afterrender: function(cmp) {
+                                var tip = Ext.create('Rally.ui.tooltip.ToolTip', {
+                                    target: cmp.getEl(),
+                                    anchor: 'right',
+                                    html: 'Filter commits by: <br /> <ul><li>-- message</li><li>-- author</li><li>-- revision</li></ul>'
+                                });
+                            },
+                            scope: this
+                        }
                     });
                 },
             
@@ -1659,7 +1749,6 @@
             
                 _addGrid: function() {
                     var callback = function(store) {
-                        store.load();
                         var grid = this.add({
                             xtype: 'changesetgrid',
                             itemId: 'changeSetGrid',
@@ -1668,6 +1757,7 @@
                             model: 'changeset.model.Commit',
                             store: store
                         });
+                        store.load();
                         grid.setTitle('Commits');
                         grid.expand();
                         this.mon(grid, 'artifactClicked', this._showArtifact, this);
@@ -1712,6 +1802,13 @@
                         record: record
                     });
                     revision.expand();
+                },
+            
+                _onFilter: function(value) {
+                    var grid = this.down('#changeSetGrid');
+                    if (grid) {
+                        grid.setCommitFilter(value);
+                    }
                 }
             });            Ext.define('CustomApp', {
                 extend: 'Rally.app.App',

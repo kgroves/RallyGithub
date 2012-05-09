@@ -39,10 +39,17 @@ Ext.define('changset.ui.Login', {
             margin: '0 0 20 0'
         });
 
-        this.mon(this.down('#LoginButton'), 'click', this._onLoginClick, this);
+        this.mon(this.down('#LoginButton'), 'click', this._onSubmit, this);
+        Ext.each(this.query('textfield'), function(textfield) {
+            textfield.on('specialkey', function(field, evt) {
+                if (evt.getKey() === evt.ENTER) {
+                    this._onSubmit();
+                }
+            }, this);
+        }, this);
     },
 
-    _onLoginClick: function() {
+    _onSubmit: function() {
         if (this.getForm().isValid()) {
             var values = this.getValues();
             this.adapter.authenticate(values.username, values.password);
