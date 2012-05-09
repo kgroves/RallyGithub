@@ -9,7 +9,7 @@ Ext.define('changset.ui.ChangesetFilter', {
         xtype: 'textfield',
         itemId: 'FilterText',
         name: 'filtertext',
-        width: 250
+        width: 150
     },{
         xtype: 'rallybutton',
         itemId: 'FilterButton',

@@ -1,7 +1,7 @@
 Ext.define('changeset.ui.ChangesetBrowser', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.changesetbrowser',
-    require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset', 'Rally.ui.ComboBox'],
+    require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset', 'changeset.ui.ChangesetFilter', 'Rally.ui.ComboBox'],
     cls: 'changeset-browser',
     border: 0,
     bodyBorder: false,
@@ -32,25 +32,30 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             items: [{
                 xtype: 'rallybutton',
                 text: 'Logout',
+                margin: '0 10 0 0 ',
                 handler: function() {
                     this.adapter.logout();
                 },
                 scope: this
-            },{
-                xtype: 'changesetfilter',
-                margin: '0 0 0 10',
-                flex: 1
             }]
         });
 
         this._addRepoChooser();
     },
 
+    _addFilter: function() {
+        var toolbar = this.down('#topToolbar');
+        var filter = toolbar.add({
+            xtype: 'changesetfilter',
+            width: 210
+        });
+    },
+
     _addRepoChooser: function() {
         var toolbar = this.down('#topToolbar');
         var valueField = 'name';
         this.adapter.getRepositoryStore(function(store) {
-            var combo = toolbar.insert(0, {
+            var combo = toolbar.add({
                 xtype: 'rallycombobox',
                 margin: '0 5 0 0',
                 store: store,
@@ -92,7 +97,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
 
         var valueField = 'name';
         this.adapter.getBranchStore(function(store) {
-            combo = toolbar.insert(1, {
+            combo = toolbar.add({
                 xtype: 'rallycombobox',
                 itemId: 'branchChooser',
                 margin: '0 5 0 0',
@@ -123,6 +128,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
     _onBranchSelect: function(branch) {
         this.adapter.setBranch(branch);
         this.removeAll();
+        this._addFilter();
         this._addGrid();
     },
 
@@ -136,9 +142,9 @@ Ext.define('changeset.ui.ChangesetBrowser', {
                 model: 'changeset.model.Commit',
                 store: store
             });
+            store.load();
             grid.setTitle('Commits');
             grid.expand();
-            grid.getStore().load();
             this.mon(grid, 'artifactClicked', this._showArtifact, this);
             this.mon(grid, 'revisionClicked', this._showRevision, this);
         };

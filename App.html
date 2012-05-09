@@ -37,6 +37,7 @@
             PR_NOCODE:"nocode",PR_PLAIN:"pln",PR_PUNCTUATION:"pun",PR_SOURCE:"src",PR_STRING:"str",PR_TAG:"tag",PR_TYPE:"typ"}})();
             Ext.define('changeset.model.Branch', {
                 extend: 'Ext.data.Model',
+                idProperty: 'name',
                 fields: [
                     {name: 'commit', type: 'object'},
                     {name: 'name', type: 'string'}
@@ -54,6 +55,7 @@
                 ]
             });            Ext.define('changeset.model.Commit', {
                 extend: 'Ext.data.Model',
+                idProperty: 'revision',
                 fields: [
                     {name: 'revision', type: 'string'},
                     {name: 'url', type: 'string'},
@@ -77,22 +79,28 @@
                 ]
             });            Ext.define('changeset.model.Repository', {
                 extend: 'Ext.data.Model',
+                idProperty: 'name',
                 fields: [
                     {name: 'url', type: 'string'},
                     {name: 'name', type: 'string'}
                 ]
-            });            /** Easy comment lookup by path and line number. */
+            });            /**
+             * Lookup comment records by path and line number.
+             */
             Ext.define('changeset.data.CommentLocator', {
-                
+            
+                /**
+                 * @param {Ext.data.Store} store A store that loads {changeset.model.Comment} records.
+                 */
                 constructor: function(store) {
                     this.comments = this._getKeyedComments(store);
                 },
                 
                 /**
-                 * Returns a comment that belongs to a specific line.
+                 * Returns a comment that belongs to a specific diff line.
                  * 
-                 * @param {String} path file path
-                 * @param {String|Int} lineNumber line number.
+                 * @param {String} path File path.
+                 * @param {String|Int} lineNumber Line number.
                  * @return {changeset.model.Comment}
                  */
                 getComments: function(path, lineNumber) {
@@ -115,12 +123,12 @@
                     }, this);
                     return comments;
                 }
-            });            Ext.define('changeset.data.GithubProxy', {
+            });            Ext.define('changeset.data.github.Proxy', {
                 extend: 'Ext.data.proxy.Rest',
             
                 statics: {
                     /**
-                     * extract functions are used to normalize data objects
+                     * extract functions are used to normalize data objects coming in from the server
                      */
                     extractCommitValues: function(data) {
                         var output = {
@@ -160,7 +168,7 @@
                             comment: data.body,
                             timestamp: data.created_at,
                             user: data.user,
-                            avatarUrl: data.user ? data.user.avatar_url : null,
+                            avatarUrl: data.user ? data.user.avatar_url : null
                         };
                         return output;
                     }
@@ -174,8 +182,13 @@
             });            /**
              * Adapter classes contain methods to construct Store objects for use by ui components.
              */
-            Ext.define('changeset.data.GithubAdapter', {
-                require: ['changeset.model.Changeset', 'changeset.data.GithubProxy'],
+            Ext.define('changeset.data.github.Adapter', {
+                require: [
+                    'changeset.model.Changeset',
+                    'changeset.model.Comment',
+                    'changeset.data.github.Proxy',
+                    'changeset.data.github.CommitStore'
+                ],
                 mixins: {
                     observable: 'Ext.util.Observable',
                     stateful: 'Ext.state.Stateful'
@@ -213,9 +226,9 @@
                 
                 /**
                  * @cfg
-                 * Maximum pageSize allowed by api.
+                 * Page size to use for api calls.
                  */
-                maxPageSize: 100,
+                pageSize: 10,
             
                 /**
                  * stateful configs
@@ -325,7 +338,7 @@
             
                     var store = Ext.create('Ext.data.Store', {
                         model: 'changeset.model.Repository',
-                        proxy: Ext.create('changeset.data.GithubProxy', {
+                        proxy: Ext.create('changeset.data.github.Proxy', {
                             url: url
                         })
                     });
@@ -346,7 +359,7 @@
             
                     var store = Ext.create('Ext.data.Store', {
                         model: 'changeset.model.Branch',
-                        proxy: Ext.create('changeset.data.GithubProxy', {
+                        proxy: Ext.create('changeset.data.github.Proxy', {
                             url: url
                         })
                     });
@@ -385,12 +398,12 @@
             
                     var store = Ext.create('Ext.data.Store', {
                         model: 'changeset.model.ChangesetFile',
-                        proxy: Ext.create('changeset.data.GithubProxy', {
+                        proxy: Ext.create('changeset.data.github.Proxy', {
                             url: url,
                             reader: {
                                 type: 'json',
                                 root: 'files',
-                                extractValues: changeset.data.GithubProxy.extractChangesetFileValues
+                                extractValues: changeset.data.github.Proxy.extractChangesetFileValues
                             }
                         })
                     });
@@ -413,12 +426,12 @@
             
                     var store = Ext.create('Ext.data.Store', {
                         model: 'changeset.model.Comment',
-                        pageSize: this.maxPageSize,
-                        proxy: Ext.create('changeset.data.GithubProxy', {
+                        pageSize: this.pageSize,
+                        proxy: Ext.create('changeset.data.github.Proxy', {
                             url: url,
                             reader: {
                                 type: 'json',
-                                extractValues: changeset.data.GithubProxy.extractCommentValues
+                                extractValues: changeset.data.github.Proxy.extractCommentValues
                             }
                         })
                     });
@@ -433,7 +446,6 @@
                  * @param scope {Object} The scope to execute the callback in.
                  */
                 saveComment: function(data, callback, scope) {
-                    console.log(data);
                     var url = [
                         this.apiUrl,
                         'repos',
@@ -455,7 +467,11 @@
                             position: data.diffIdx
                         },
                         success: function(response, opts) {
-                            console.log('got comment', response);
+                            if (callback) {
+                                var data = Ext.decode(response.responseText);
+                                var record = new changeset.model.Comment(changeset.data.github.Proxy.extractCommentValues(data));
+                                callback.call(scope, record);
+                            }
                         },
                         scope: this
                     });
@@ -478,7 +494,6 @@
                         },
                         success: function(response, opts) {
                             var data = Ext.decode(response.responseText);
-                            console.log(data);
                             var tokenLength = data.length;
                             for (var i = 0; i < tokenLength; i++) {
                                 var token = data[i];
@@ -575,7 +590,7 @@
             
                 _onAjaxRequestException: function(conn, response, options, eOpts) {
                     if (response.status === 401) {
-                        this.fireEvent('authenticationrequired');
+                        this.fireEvent('authenticationrequired', this);
                     }
                 },
             
@@ -587,20 +602,20 @@
                         'commits'
                     ].join('/');
             
-                    var branchStore = Ext.create('Ext.data.Store', {
-                        model: 'changeset.model.Commit',
-                        proxy: Ext.create('changeset.data.GithubProxy', {
-                            url: url,
-                            extraParams: {
-                                sha: this.branch.commit.sha
-                            },
-                            reader: {
-                                type: 'json',
-                                extractValues: changeset.data.GithubProxy.extractCommitValues
-                            }
-                        })
+                    var commitStore = Ext.create('changeset.data.github.CommitStore', {
+                        startSha: this.branch.commit.sha,
+                        pageSize: this.pageSize,
+                        clearOnPageLoad: false,
+                        proxy: Ext.create('changeset.data.github.Proxy', {
+                             url: url,
+                             reader: {
+                                 type: 'json',
+                                 extractValues: changeset.data.github.Proxy.extractCommitValues
+                             }
+                         })
                     });
-                    callback.call(scope, branchStore);
+            
+                    callback.call(scope, commitStore);
                 },
             
                 _getChangeset: function(record, callback, scope) {
@@ -623,6 +638,46 @@
                         },
                         scope: this
                     });
+                }
+            });            /**
+             * Store for loading {changeset.model.Commit} records from Github.
+             */
+            Ext.define('changeset.data.github.CommitStore', {
+                extend: 'Ext.data.Store',
+                require: [
+                    'changeset.model.Commit',
+                    'changeset.data.github.Proxy'
+                ],
+            
+                model: 'changeset.model.Commit',
+            
+                /**
+                 * Github's commit endpoint's paging is a little funky.
+                 *
+                 * You must specify a sha to page to,
+                 * instead of a normal page number.
+                 */
+                loadPage: function(page, options) {
+                    this._addShaToOptions(page);
+                    return this.callParent(arguments)
+                },
+            
+                _addShaToOptions: function(page) {
+                    if (this.proxy) {
+                        var sha;
+                        if (page === 1) {
+                            sha = this.startSha;
+                        } else {
+                            var lastCommitIdx = ((page - 1) * this.pageSize) - 1;
+                            var lastCommit = this.getAt(lastCommitIdx);
+                            sha = lastCommit.get('revision');
+                        }
+            
+                        if (!this.proxy.extraParams) {
+                            this.proxy.extraParams = {};
+                        }
+                        this.proxy.extraParams.sha = sha;
+                    }
                 }
             });            Ext.define('changeset.ui.AddComment', {
                 extend: 'Ext.form.Panel',
@@ -664,18 +719,27 @@
                          * @event
                          * fired when comment is saved.
                          */
-                        'savecomment'
+                        'save',
+                        /**
+                         * @event
+                         * fired when comment edit is canceled.
+                         */
+                        'cancel'
                     ]);
             
                     this.mon(this.down('#SubmitButton'), 'click', this._onSubmitClick, this);
-                    this.mon(this.down('#CancelButton'), 'click', this.destroy, this);
+                    this.mon(this.down('#CancelButton'), 'click', this._onCancelClick, this);
                 },
             
                 _onSubmitClick: function() {
                     if (this.getForm().isValid()) {
                         var values = this.getValues();
-                        this.fireEvent('saveComment', values.comment);
+                        this.fireEvent('save', this, values.comment);
                     }
+                },
+            
+                _onCancelClick: function() {
+                    this.fireEvent('cancel', this);
                 }
             });            Ext.define('changeset.ui.Avatar', {
                 extend: 'Ext.Component',
@@ -728,6 +792,8 @@
                 }],
             
                 initComponent: function() {
+                    console.log(this.adapter);
+            
                     this.callParent(arguments);
                     this.insert(0, {
                         html: '<span class="login-message">' + this.adapter.getLoginMessage() + '</span>',
@@ -742,6 +808,67 @@
                     if (this.getForm().isValid()) {
                         var values = this.getValues();
                         this.adapter.authenticate(values.username, values.password);
+                    }
+                }
+            });            Ext.define('changset.ui.ChangesetFilter', {
+                extend: 'Ext.form.Panel',
+                alias: 'widget.changesetfilter',
+                cls: 'changeset-filter',
+                border: 0,
+                layout: 'hbox',
+            
+                items: [{
+                    xtype: 'textfield',
+                    itemId: 'FilterText',
+                    name: 'filtertext',
+                    width: 150
+                },{
+                    xtype: 'rallybutton',
+                    itemId: 'FilterButton',
+                    text: 'Filter',
+                    margin: '0 0 0 4'
+                }],
+            
+                initComponent: function() {
+                    this.callParent(arguments);
+                    this.mon(this.down('#FilterButton'), 'click', this._onFilterClick, this, {});
+                },
+            
+                _onFilterClick: function() {
+                    var value = Ext.String.escape(this.down('#FilterText').getValue());
+                    var grid = Ext.ComponentQuery.query('changesetgrid')[0];
+            
+                    if(!(value && grid)) {
+                        return;
+                    }
+            
+                    var filter = Ext.create('Ext.util.Filter', {
+                        property: 'message',
+                        root: 'data',
+                        anyMatch: true,
+                        value: value
+                    });
+                    grid.getStore().clearFilter();
+                    grid.getStore().filter([filter]);
+            
+                    if( !this.down('#ClearButton') ) {
+                        this.add({
+                            xtype: 'rallybutton',
+                            itemId: 'ClearButton',
+                            text: 'Clear Filter',
+                            margin: '0 0 0 4',
+                            listeners: {
+                                click: {
+                                    fn: function() {
+                                        var grid = Ext.ComponentQuery.query('changesetgrid')[0];
+                                        grid.getStore().clearFilter();
+                                        this.down('#FilterText').setValue('');
+                                        this.remove(this.down('#ClearButton'));
+                                    }
+                                },
+                                scope: this
+                            }
+                        });
                     }
                 }
             });            Ext.define('changeset.ui.ChangesetFileDiff', {
@@ -793,12 +920,14 @@
                     var source = this._renderSourceTable();
                     this.add({
                         html: source[0],
+                        autoScroll: true,
                         border: 0,
                         listeners: {
                             afterrender: function(cmp) {
                                 Ext.each(source[1], function(commentConfig){
+                                    Ext.apply(commentConfig, {width: this._getCommentWidth()});
                                     Ext.create('changeset.ui.ChangesetSummary', commentConfig);
-                                });
+                                }, this);
             
                                 cmp.getEl().on('mouseover', this._onLineOver, this, {delegate: '.line-code'});
                             },
@@ -856,7 +985,7 @@
                         row.push(Ext.String.format('<td><div id="{0}" class="changeset-comment"></div></td>', commentId));
                         row.push('</tr>');
                         commentRows.push(row.join(''));
-                        
+            
                         commentConfigs.push({
                             renderTo: commentId,
                             record: comment,
@@ -927,48 +1056,102 @@
                 },
             
                 _showAddComment: function(evt, target, options) {
-                    var lineEl = Ext.fly(target).up('tr');
-                    var commentEl = Ext.DomHelper.insertAfter(lineEl, {
+                    // close existing comment
+                    if (this.addCommentCmp) {
+                        this.addCommentCmp.fireEvent('cancel', this.addCommentCmp);
+                    }
+            
+                    var lineEl = Ext.get(target).up('tr');
+                    var afterEl = lineEl;
+                    var nextTr = lineEl.dom.nextSibling;
+                    while (nextTr && (nextTr.nodeType !== 1 || nextTr.className.match(/line\-comment/))) {
+                        afterEl = Ext.fly(nextTr);
+                        nextTr = nextTr.nextSibling;
+                    }
+            
+                    var commentEl = Ext.DomHelper.insertAfter(afterEl, {
                         tag: 'tr',
                         cls: 'line-comment',
                         html: '<th colspan="2">comment</th><td><div class="changeset-add-comment"></div></td>'
                     }, true);
+                    commentEl.scrollIntoView(commentEl.up('.x-accordion-body'), false);
             
-                    var addCommentCmp = Ext.create('changeset.ui.AddComment', {
+                    this.addCommentCmp = Ext.create('changeset.ui.AddComment', {
                         renderTo: commentEl.down('.changeset-add-comment'),
                         margin: 5,
+                        width: this._getCommentWidth(),
                         listeners: {
-                            savecomment: function(comment) {
-                                addCommentCmp.setLoading(true);
-            
-                                var lineIdx, diffIdx;
-                                Ext.each(lineEl.dom.className.split(' '), function(clsName) {
-                                    var lineMatch = clsName.match(/line\-idx\-(\d+)/),
-                                        diffMatch = clsName.match(/diff\-idx\-(\d+)/);
-                                    if (!Ext.isEmpty(lineMatch)) {
-                                        lineIdx = parseInt(lineMatch[1], 10);
-                                    } else if (!Ext.isEmpty(diffMatch)) {
-                                        diffIdx = parseInt(diffMatch[1], 10);
-                                    }
-                                });
-            
-                                var data = {
-                                    filename: this.record.get('filename'),
-                                    revision: this.up('changeset').record.get('revision'),
-                                    lineIdx: lineIdx,
-                                    diffIdx: diffIdx,
-                                    comment: comment
-                                };
-            
-                                console.log(this, this.adapter);
-                                this.adapter.saveComment(data, function() {console.log('got it!', arguments)}, this);
+                            save: Ext.bind(this._onSaveComment, this, [lineEl], true),
+                            cancel: this._onCancelComment,
+                            afterrender: function() {
+                                this.doLayout();
                             },
                             destroy: function() {
-                                commentEl.destroy();
+                                this.addCommentCmp = null;
                             },
                             scope: this
                         }
                     });
+                },
+            
+                _getCommentWidth: function() {
+                    var borderWidth = 1,
+                        borderCount = 5,
+                        thWidth = 35,
+                        thCount = 2,
+                        paddingWidth = 5;
+                    return this.getWidth() - (borderWidth * borderCount) - (thWidth * thCount) - (paddingWidth * 2);
+                },
+            
+                _onSaveComment: function(cmp, comment, options, lineEl) {
+                    cmp.setLoading(true);
+            
+                    var lineIdx, diffIdx;
+                    Ext.each(lineEl.dom.className.split(' '), function(clsName) {
+                        var lineMatch = clsName.match(/line\-idx\-(\d+)/),
+                            diffMatch = clsName.match(/diff\-idx\-(\d+)/);
+                        if (!Ext.isEmpty(lineMatch)) {
+                            lineIdx = parseInt(lineMatch[1], 10);
+                        } else if (!Ext.isEmpty(diffMatch)) {
+                            diffIdx = parseInt(diffMatch[1], 10);
+                        }
+                    });
+            
+                    var data = {
+                        filename: this.record.get('filename'),
+                        revision: this.up('changeset').record.get('revision'),
+                        lineIdx: lineIdx,
+                        diffIdx: diffIdx,
+                        comment: comment
+                    };
+            
+                    this.adapter.saveComment(data, function(record) {
+                        var commentEl = cmp.getEl().up('td').insertFirst({tag: 'div', cls: 'changeset-comment'});
+                        cmp.destroy();
+            
+                        Ext.create('changeset.ui.ChangesetSummary', {
+                            renderTo: commentEl,
+                            width: this._getCommentWidth(),
+                            record: record,
+                            messageField: 'comment',
+                            userField: 'user',
+                            userNameField: 'login',
+                            revisionField: 'filename',
+                            listeners: {
+                                afterrender: function() {
+                                    this.doLayout();
+                                },
+                                scope: this
+                            }
+                        });
+                    }, this);
+                },
+            
+                _onCancelComment: function(cmp) {
+                    var rowEl = cmp.getEl().up('tr');
+                    cmp.destroy();
+                    rowEl.destroy();
+                    this.doLayout();
                 },
             
                 _onLineOver: function(evt, target, options) {
@@ -992,7 +1175,6 @@
                     });
             
                     imgEl.on('click', this._showAddComment, this);
-            
                 },
             
                 _onLineOut: function(el) {
@@ -1004,7 +1186,10 @@
                 }
             });            Ext.define('changeset.ui.ChangesetGrid', {
                 extend: 'Rally.ui.grid.Grid',
-                require: ['Rally.util.Navigation'],
+                require: [
+                    'Rally.util.Navigation',
+                    'Rally.ui.Button'
+                ],
                 alias: 'widget.changesetgrid',
                 cls: 'changeset-grid',
             
@@ -1049,10 +1234,20 @@
                     width: 85
                 }],
             
+                buttonAlign: 'center',
+                buttons: [{
+                    xtype: 'rallybutton',
+                    text: 'Load More',
+                    itemId: 'loadButton',
+                    margin: '10 0 0 0',
+                    width: 400
+                }],
+            
                 constructor: function(config) {
                     config = config || {};
                     Ext.applyIf(config, {
-                        columnCfgs: this.columnCfgs
+                        columnCfgs: this.columnCfgs,
+                        showPagingToolbar: false
                     });
                     this.callParent([config]);
                 },
@@ -1073,6 +1268,12 @@
                     );
             
                     this.on('render', this._onRender, this);
+                    this.down('#loadButton').on('click', this._loadMore, this);
+                    this.mon(this.store, 'load', this._onStoreLoad, this);
+                },
+            
+                _loadMore: function() {
+                    this.store.nextPage();
                 },
             
                 _onRender: function() {
@@ -1088,6 +1289,13 @@
                 _onRevisionClick: function(event, dom) {
                     var record = this.store.findRecord('revision', dom.innerHTML);
                     this.fireEvent('revisionClicked', record);
+                },
+            
+                _onStoreLoad: function() {
+                    // If the count is divisible by the pagesize, we've run out of pages.
+                    if (this.store.count() % this.store.pageSize) {
+                        this.down('#loadButton').destroy();
+                    }
                 }
             });            Ext.define('changeset.ui.ChangesetFilesGrid', {
                 extend: 'Rally.ui.grid.Grid',
@@ -1290,7 +1498,6 @@
                     var addedCount = 0;
                     store.each(function(record) {
                         var task = new Ext.util.DelayedTask(function() {
-                            console.log(this, this.adapter);
                             this.add({
                                 xtype: 'changesetfilediff',
                                 margin: 10,
@@ -1319,7 +1526,7 @@
             });            Ext.define('changeset.ui.ChangesetBrowser', {
                 extend: 'Ext.panel.Panel',
                 alias: 'widget.changesetbrowser',
-                require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset', 'Rally.ui.ComboBox'],
+                require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset', 'changeset.ui.ChangesetFilter', 'Rally.ui.ComboBox'],
                 cls: 'changeset-browser',
                 border: 0,
                 bodyBorder: false,
@@ -1347,26 +1554,33 @@
                         border: 0,
                         padding: 5,
                         layout: 'hbox',
-                        items: [
-                            {
-                                xtype: 'rallybutton',
-                                text: 'Logout',
-                                handler: function() {
-                                    this.adapter.logout();
-                                },
-                                scope: this
-                            }
-                        ]
+                        items: [{
+                            xtype: 'rallybutton',
+                            text: 'Logout',
+                            margin: '0 10 0 0 ',
+                            handler: function() {
+                                this.adapter.logout();
+                            },
+                            scope: this
+                        }]
                     });
             
                     this._addRepoChooser();
+                },
+            
+                _addFilter: function() {
+                    var toolbar = this.down('#topToolbar');
+                    var filter = toolbar.add({
+                        xtype: 'changesetfilter',
+                        width: 210
+                    });
                 },
             
                 _addRepoChooser: function() {
                     var toolbar = this.down('#topToolbar');
                     var valueField = 'name';
                     this.adapter.getRepositoryStore(function(store) {
-                        var combo = toolbar.insert(0, {
+                        var combo = toolbar.add({
                             xtype: 'rallycombobox',
                             margin: '0 5 0 0',
                             store: store,
@@ -1408,7 +1622,7 @@
             
                     var valueField = 'name';
                     this.adapter.getBranchStore(function(store) {
-                        combo = toolbar.insert(1, {
+                        combo = toolbar.add({
                             xtype: 'rallycombobox',
                             itemId: 'branchChooser',
                             margin: '0 5 0 0',
@@ -1439,11 +1653,13 @@
                 _onBranchSelect: function(branch) {
                     this.adapter.setBranch(branch);
                     this.removeAll();
+                    this._addFilter();
                     this._addGrid();
                 },
             
                 _addGrid: function() {
                     var callback = function(store) {
+                        store.load();
                         var grid = this.add({
                             xtype: 'changesetgrid',
                             itemId: 'changeSetGrid',
@@ -1454,7 +1670,6 @@
                         });
                         grid.setTitle('Commits');
                         grid.expand();
-                        grid.getStore().load();
                         this.mon(grid, 'artifactClicked', this._showArtifact, this);
                         this.mon(grid, 'revisionClicked', this._showRevision, this);
                     };
@@ -1504,7 +1719,7 @@
                     'Ext.state.Manager',
                     'Ext.state.LocalStorageProvider',
                     'Ext.state.CookieProvider',
-                    'changeset.data.GithubAdapter',
+                    'changeset.data.github.Adapter',
                     'changeset.ui.ChangesetBrowser'
                 ],
                 componentCls: 'app',
@@ -1522,7 +1737,7 @@
                     }
                     Ext.state.Manager.setProvider(provider);
             
-                    this.adapter = Ext.create('changeset.data.GithubAdapter', {
+                    this.adapter = Ext.create('changeset.data.github.Adapter', {
                         listeners: {
                             ready: this._onAdapterReady,
                             authenticationrequired: this._onAuthenticationRequired,
@@ -1531,28 +1746,27 @@
                     });
                 },
             
-                _onAdapterReady: function() {
+                _onAdapterReady: function(adapter) {
                     this.removeAll();
-            
                     this.add({
                         xtype: 'changesetbrowser',
                         margin: '0 5 5 5',
                         border: 0,
-                        adapter: this.adapter,
+                        adapter: adapter,
                         flex: 1
                     });
                 },
             
-                _onAuthenticationRequired: function() {
+                _onAuthenticationRequired: function(adapter) {
                     this.removeAll();
                     this.add({
                         flex: 1,
                         border: 0,
-                        adapter: this.adapter,
+                        adapter: adapter,
                         items: [{
                             xtype: 'changesetlogin',
                             border: 0,
-                            adapter: this.adapter
+                            adapter: adapter
                         }]
                     });
                 }
@@ -1625,6 +1839,7 @@
         .changeset-file-diff .line-comment {
             border: 1px solid #aaa;
             border-left: 0;
+            border-right: 0;
         }
         
         .changeset-file-diff .line-comment th {

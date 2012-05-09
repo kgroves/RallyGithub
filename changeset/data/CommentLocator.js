@@ -1,15 +1,20 @@
-/** Easy comment lookup by path and line number. */
+/**
+ * Lookup comment records by path and line number.
+ */
 Ext.define('changeset.data.CommentLocator', {
-    
+
+    /**
+     * @param {Ext.data.Store} store A store that loads {changeset.model.Comment} records.
+     */
     constructor: function(store) {
         this.comments = this._getKeyedComments(store);
     },
     
     /**
-     * Returns a comment that belongs to a specific line.
+     * Returns a comment that belongs to a specific diff line.
      * 
-     * @param {String} path file path
-     * @param {String|Int} lineNumber line number.
+     * @param {String} path File path.
+     * @param {String|Int} lineNumber Line number.
      * @return {changeset.model.Comment}
      */
     getComments: function(path, lineNumber) {

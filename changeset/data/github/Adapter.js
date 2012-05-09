@@ -1,8 +1,13 @@
 /**
  * Adapter classes contain methods to construct Store objects for use by ui components.
  */
-Ext.define('changeset.data.GithubAdapter', {
-    require: ['changeset.model.Changeset', 'changeset.model.Comment', 'changeset.data.GithubProxy'],
+Ext.define('changeset.data.github.Adapter', {
+    require: [
+        'changeset.model.Changeset',
+        'changeset.model.Comment',
+        'changeset.data.github.Proxy',
+        'changeset.data.github.CommitStore'
+    ],
     mixins: {
         observable: 'Ext.util.Observable',
         stateful: 'Ext.state.Stateful'
@@ -40,9 +45,9 @@ Ext.define('changeset.data.GithubAdapter', {
     
     /**
      * @cfg
-     * Maximum pageSize allowed by api.
+     * Page size to use for api calls.
      */
-    maxPageSize: 100,
+    pageSize: 100,
 
     /**
      * stateful configs
@@ -152,7 +157,7 @@ Ext.define('changeset.data.GithubAdapter', {
 
         var store = Ext.create('Ext.data.Store', {
             model: 'changeset.model.Repository',
-            proxy: Ext.create('changeset.data.GithubProxy', {
+            proxy: Ext.create('changeset.data.github.Proxy', {
                 url: url
             })
         });
@@ -173,7 +178,7 @@ Ext.define('changeset.data.GithubAdapter', {
 
         var store = Ext.create('Ext.data.Store', {
             model: 'changeset.model.Branch',
-            proxy: Ext.create('changeset.data.GithubProxy', {
+            proxy: Ext.create('changeset.data.github.Proxy', {
                 url: url
             })
         });
@@ -212,12 +217,12 @@ Ext.define('changeset.data.GithubAdapter', {
 
         var store = Ext.create('Ext.data.Store', {
             model: 'changeset.model.ChangesetFile',
-            proxy: Ext.create('changeset.data.GithubProxy', {
+            proxy: Ext.create('changeset.data.github.Proxy', {
                 url: url,
                 reader: {
                     type: 'json',
                     root: 'files',
-                    extractValues: changeset.data.GithubProxy.extractChangesetFileValues
+                    extractValues: changeset.data.github.Proxy.extractChangesetFileValues
                 }
             })
         });
@@ -240,12 +245,12 @@ Ext.define('changeset.data.GithubAdapter', {
 
         var store = Ext.create('Ext.data.Store', {
             model: 'changeset.model.Comment',
-            pageSize: this.maxPageSize,
-            proxy: Ext.create('changeset.data.GithubProxy', {
+            pageSize: this.pageSize,
+            proxy: Ext.create('changeset.data.github.Proxy', {
                 url: url,
                 reader: {
                     type: 'json',
-                    extractValues: changeset.data.GithubProxy.extractCommentValues
+                    extractValues: changeset.data.github.Proxy.extractCommentValues
                 }
             })
         });
@@ -283,7 +288,7 @@ Ext.define('changeset.data.GithubAdapter', {
             success: function(response, opts) {
                 if (callback) {
                     var data = Ext.decode(response.responseText);
-                    var record = new changeset.model.Comment(changeset.data.GithubProxy.extractCommentValues(data));
+                    var record = new changeset.model.Comment(changeset.data.github.Proxy.extractCommentValues(data));
                     callback.call(scope, record);
                 }
             },
@@ -416,20 +421,20 @@ Ext.define('changeset.data.GithubAdapter', {
             'commits'
         ].join('/');
 
-        var branchStore = Ext.create('Ext.data.Store', {
-            model: 'changeset.model.Commit',
-            proxy: Ext.create('changeset.data.GithubProxy', {
-                url: url,
-                extraParams: {
-                    sha: this.branch.commit.sha
-                },
-                reader: {
-                    type: 'json',
-                    extractValues: changeset.data.GithubProxy.extractCommitValues
-                }
-            })
+        var commitStore = Ext.create('changeset.data.github.CommitStore', {
+            startSha: this.branch.commit.sha,
+            pageSize: this.pageSize,
+            clearOnPageLoad: false,
+            proxy: Ext.create('changeset.data.github.Proxy', {
+                 url: url,
+                 reader: {
+                     type: 'json',
+                     extractValues: changeset.data.github.Proxy.extractCommitValues
+                 }
+             })
         });
-        callback.call(scope, branchStore);
+
+        callback.call(scope, commitStore);
     },
 
     _getChangeset: function(record, callback, scope) {

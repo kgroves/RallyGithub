@@ -1,9 +1,9 @@
-Ext.define('changeset.data.GithubProxy', {
+Ext.define('changeset.data.github.Proxy', {
     extend: 'Ext.data.proxy.Rest',
 
     statics: {
         /**
-         * extract functions are used to normalize data objects
+         * extract functions are used to normalize data objects coming in from the server
          */
         extractCommitValues: function(data) {
             var output = {
@@ -43,7 +43,7 @@ Ext.define('changeset.data.GithubProxy', {
                 comment: data.body,
                 timestamp: data.created_at,
                 user: data.user,
-                avatarUrl: data.user ? data.user.avatar_url : null,
+                avatarUrl: data.user ? data.user.avatar_url : null
             };
             return output;
         }

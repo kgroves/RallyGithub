@@ -1,6 +1,9 @@
 Ext.define('changeset.ui.ChangesetGrid', {
     extend: 'Rally.ui.grid.Grid',
-    require: ['Rally.util.Navigation'],
+    require: [
+        'Rally.util.Navigation',
+        'Rally.ui.Button'
+    ],
     alias: 'widget.changesetgrid',
     cls: 'changeset-grid',
 
@@ -45,10 +48,20 @@ Ext.define('changeset.ui.ChangesetGrid', {
         width: 85
     }],
 
+    buttonAlign: 'center',
+    buttons: [{
+        xtype: 'rallybutton',
+        text: 'Load More',
+        itemId: 'loadButton',
+        margin: '10 0 0 0',
+        width: 400
+    }],
+
     constructor: function(config) {
         config = config || {};
         Ext.applyIf(config, {
-            columnCfgs: this.columnCfgs
+            columnCfgs: this.columnCfgs,
+            showPagingToolbar: false
         });
         this.callParent([config]);
     },
@@ -69,6 +82,12 @@ Ext.define('changeset.ui.ChangesetGrid', {
         );
 
         this.on('render', this._onRender, this);
+        this.down('#loadButton').on('click', this._loadMore, this);
+        this.mon(this.store, 'load', this._onStoreLoad, this);
+    },
+
+    _loadMore: function() {
+        this.store.nextPage();
     },
 
     _onRender: function() {
@@ -84,5 +103,17 @@ Ext.define('changeset.ui.ChangesetGrid', {
     _onRevisionClick: function(event, dom) {
         var record = this.store.findRecord('revision', dom.innerHTML);
         this.fireEvent('revisionClicked', record);
+    },
+
+    _onStoreLoad: function(store, records) {
+        // Scroll to first new row.
+        if (records.length > 0) {
+            this.getView().focusRow(this.store.indexOf(records[0]));
+        }
+
+        // If the count is divisible by the pagesize, we've run out of pages.
+        if (records.length !== this.store.pageSize) {
+            this.down('#loadButton').destroy();
+        }
     }
 });

@@ -1,5 +1,6 @@
 Ext.define('changeset.model.Commit', {
     extend: 'Ext.data.Model',
+    idProperty: 'revision',
     fields: [
         {name: 'revision', type: 'string'},
         {name: 'url', type: 'string'},

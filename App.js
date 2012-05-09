@@ -4,7 +4,7 @@ Ext.define('CustomApp', {
         'Ext.state.Manager',
         'Ext.state.LocalStorageProvider',
         'Ext.state.CookieProvider',
-        'changeset.data.GithubAdapter',
+        'changeset.data.github.Adapter',
         'changeset.ui.ChangesetBrowser'
     ],
     componentCls: 'app',
@@ -22,7 +22,7 @@ Ext.define('CustomApp', {
         }
         Ext.state.Manager.setProvider(provider);
 
-        this.adapter = Ext.create('changeset.data.GithubAdapter', {
+        this.adapter = Ext.create('changeset.data.github.Adapter', {
             listeners: {
                 ready: this._onAdapterReady,
                 authenticationrequired: this._onAuthenticationRequired,
