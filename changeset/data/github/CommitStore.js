@@ -18,17 +18,43 @@ Ext.define('changeset.data.github.CommitStore', {
      */
     loadPage: function(page, options) {
         this._addShaToOptions(page);
-        return this.callParent(arguments)
+        if (page > 1) {
+            // temporarily increase page size since we will get a duplicate commit back.
+            this.pageSize++;
+        }
+        var result = this.callParent(arguments);
+        if (page > 1) {
+            this.pageSize--;
+        }
+        return result;
+    },
+
+    /**
+     * Overridden to remove duplicate row.
+     * @private
+     */
+    onProxyLoad: function(operation) {
+        if (operation && operation.page > 1 && operation.resultSet) {
+            var resultSet = operation.resultSet;
+            if (resultSet.records && resultSet.records.length > 0) {
+                resultSet.records.shift();
+                resultSet.count--;
+                resultSet.total--;
+                resultSet.totalRecords--;
+            }
+        }
+        return this.callParent(arguments);
     },
 
     _addShaToOptions: function(page) {
         if (this.proxy) {
-            var sha;
+            var sha,
+                data = this.snapshot || this.data;
             if (page === 1) {
                 sha = this.startSha;
             } else {
                 var lastCommitIdx = ((page - 1) * this.pageSize) - 1;
-                var lastCommit = this.getAt(lastCommitIdx);
+                var lastCommit = data.getAt(lastCommitIdx);
                 sha = lastCommit.get('revision');
             }
 

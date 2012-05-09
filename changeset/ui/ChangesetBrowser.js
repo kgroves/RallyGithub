@@ -1,7 +1,13 @@
 Ext.define('changeset.ui.ChangesetBrowser', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.changesetbrowser',
-    require: ['changeset.ui.ChangesetGrid', 'changeset.ui.Changeset', 'changeset.ui.ChangesetFilter', 'Rally.ui.ComboBox'],
+    require: [
+        'changeset.ui.ChangesetGrid',
+        'changeset.ui.Changeset',
+        'changeset.ui.ChangesetFilter',
+        'Rally.ui.ComboBox',
+        'Rally.ui.tooltip.ToolTip'
+    ],
     cls: 'changeset-browser',
     border: 0,
     bodyBorder: false,
@@ -32,7 +38,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             items: [{
                 xtype: 'rallybutton',
                 text: 'Logout',
-                margin: '0 10 0 0 ',
+                margin: '0 5 0 0 ',
                 handler: function() {
                     this.adapter.logout();
                 },
@@ -47,7 +53,18 @@ Ext.define('changeset.ui.ChangesetBrowser', {
         var toolbar = this.down('#topToolbar');
         var filter = toolbar.add({
             xtype: 'changesetfilter',
-            width: 210
+            width: 210,
+            listeners: {
+                filter: this._onFilter,
+                afterrender: function(cmp) {
+                    var tip = Ext.create('Rally.ui.tooltip.ToolTip', {
+                        target: cmp.getEl(),
+                        anchor: 'right',
+                        html: 'Filter commits by: <br /> <ul><li>-- message</li><li>-- author</li><li>-- revision</li></ul>'
+                    });
+                },
+                scope: this
+            }
         });
     },
 
@@ -187,5 +204,12 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             record: record
         });
         revision.expand();
+    },
+
+    _onFilter: function(value) {
+        var grid = this.down('#changeSetGrid');
+        if (grid) {
+            grid.setCommitFilter(value);
+        }
     }
 });

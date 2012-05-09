@@ -425,6 +425,7 @@ Ext.define('changeset.data.github.Adapter', {
             startSha: this.branch.commit.sha,
             pageSize: this.pageSize,
             clearOnPageLoad: false,
+            filterOnLoad: false,
             proxy: Ext.create('changeset.data.github.Proxy', {
                  url: url,
                  reader: {

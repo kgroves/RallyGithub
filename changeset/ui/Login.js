@@ -32,8 +32,6 @@ Ext.define('changset.ui.Login', {
     }],
 
     initComponent: function() {
-        console.log(this.adapter);
-
         this.callParent(arguments);
         this.insert(0, {
             html: '<span class="login-message">' + this.adapter.getLoginMessage() + '</span>',

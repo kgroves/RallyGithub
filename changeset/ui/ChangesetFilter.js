@@ -17,46 +17,31 @@ Ext.define('changset.ui.ChangesetFilter', {
         margin: '0 0 0 4'
     }],
 
-    initComponent: function() {
+    constructor: function() {
         this.callParent(arguments);
-        this.mon(this.down('#FilterButton'), 'click', this._onFilterClick, this, {});
+
+        this.addEvents([
+            /**
+             * @event
+             * fired when the filter button is clicked.
+             */
+            'filter'
+        ]);
     },
 
-    _onFilterClick: function() {
+    initComponent: function() {
+        this.callParent(arguments);
+
+        this.mon(this.down('#FilterButton'), 'click', this._onSubmit, this, {});
+        this.mon(this.down('#FilterText'), 'specialkey', function(field, evt) {
+            if (evt.getKey() === evt.ENTER) {
+                this._onSubmit();
+            }
+        }, this);
+    },
+
+    _onSubmit: function() {
         var value = Ext.String.escape(this.down('#FilterText').getValue());
-        var grid = Ext.ComponentQuery.query('changesetgrid')[0];
-
-        if(!(value && grid)) {
-            return;
-        }
-
-        var filter = Ext.create('Ext.util.Filter', {
-            property: 'message',
-            root: 'data',
-            anyMatch: true,
-            value: value
-        });
-        grid.getStore().clearFilter();
-        grid.getStore().filter([filter]);
-
-        if( !this.down('#ClearButton') ) {
-            this.add({
-                xtype: 'rallybutton',
-                itemId: 'ClearButton',
-                text: 'Clear Filter',
-                margin: '0 0 0 4',
-                listeners: {
-                    click: {
-                        fn: function() {
-                            var grid = Ext.ComponentQuery.query('changesetgrid')[0];
-                            grid.getStore().clearFilter();
-                            this.down('#FilterText').setValue('');
-                            this.remove(this.down('#ClearButton'));
-                        }
-                    },
-                    scope: this
-                }
-            });
-        }
+        this.fireEvent('filter', value);
     }
 });

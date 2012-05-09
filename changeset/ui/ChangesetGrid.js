@@ -84,10 +84,42 @@ Ext.define('changeset.ui.ChangesetGrid', {
         this.on('render', this._onRender, this);
         this.down('#loadButton').on('click', this._loadMore, this);
         this.mon(this.store, 'load', this._onStoreLoad, this);
+        this.mon(this.store, 'datachanged', this._onStoreDataChanged, this);
+    },
+
+    setCommitFilter: function(value) {
+        var store = this.store;
+        this.filteredRowCount = null;
+        if (Ext.isEmpty(value)) {
+            this.commitFilter = null;
+            store.clearFilter();
+        } else {
+            var regex = new RegExp(value, 'i');
+            this.commitFilter = {
+                filterFn: function(record) {
+                    if (regex.test(record.get('message'))) {
+                        return true;
+                    } else if (regex.test(record.get('author').name)) {
+                        return true;
+                    } else if (regex.test(record.get('revision'))) {
+                        return true;
+                    }
+
+                    return false;
+                }
+            };
+
+            store.clearFilter(true);
+            store.filter(this.commitFilter);
+        }
     },
 
     _loadMore: function() {
-        this.store.nextPage();
+        if (this.down('#loadButton')) {
+            var store = this.store;
+            store.clearFilter(true);
+            store.nextPage();
+        }
     },
 
     _onRender: function() {
@@ -108,12 +140,30 @@ Ext.define('changeset.ui.ChangesetGrid', {
     _onStoreLoad: function(store, records) {
         // Scroll to first new row.
         if (records.length > 0) {
-            this.getView().focusRow(this.store.indexOf(records[0]));
+            var rowIdx = store.indexOf(records[0]);
+            if (rowIdx) {
+                this.getView().focusRow(rowIdx);
+            }
         }
 
-        // If the count is divisible by the pagesize, we've run out of pages.
-        if (records.length !== this.store.pageSize) {
+        // If the count is less than the pagesize we've run out of pages.
+        if (records.length < store.pageSize) {
             this.down('#loadButton').destroy();
+        }
+
+        if (this.commitFilter) {
+            store.filter(this.commitFilter);
+        }
+    },
+
+    _onStoreDataChanged: function() {
+        var store = this.store;
+        if (store.isFiltered()) {
+            var filteredRowCount = store.data.getCount();
+            if (filteredRowCount < 1 || (this.filteredRowCount && this.filteredRowCount >= filteredRowCount)) {
+                this._loadMore();
+            }
+            this.filteredRowCount = filteredRowCount;
         }
     }
 });
