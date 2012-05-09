@@ -18,14 +18,7 @@ Ext.define('changeset.data.github.CommitStore', {
      */
     loadPage: function(page, options) {
         this._addShaToOptions(page);
-        if (page > 1) {
-            // temporarily increase page size since we will get a duplicate commit back.
-            this.pageSize++;
-        }
         var result = this.callParent(arguments);
-        if (page > 1) {
-            this.pageSize--;
-        }
         return result;
     },
 
@@ -53,8 +46,7 @@ Ext.define('changeset.data.github.CommitStore', {
             if (page === 1) {
                 sha = this.startSha;
             } else {
-                var lastCommitIdx = ((page - 1) * this.pageSize) - 1;
-                var lastCommit = data.getAt(lastCommitIdx);
+                var lastCommit = data.getAt(data.getCount() - 1);
                 sha = lastCommit.get('revision');
             }
 

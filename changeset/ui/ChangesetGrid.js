@@ -147,7 +147,11 @@ Ext.define('changeset.ui.ChangesetGrid', {
         }
 
         // If the count is less than the pagesize we've run out of pages.
-        if (records.length < store.pageSize) {
+        var pageSize = store.pageSize;
+        if (store.currentPage > 1) {
+            pageSize--;
+        }
+        if (records.length < pageSize) {
             this.down('#loadButton').destroy();
         }
 
