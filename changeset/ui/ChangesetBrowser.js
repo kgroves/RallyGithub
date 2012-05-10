@@ -34,15 +34,24 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             border: 0,
             padding: 5,
             layout: 'hbox',
-            items: [{
-                xtype: 'rallybutton',
-                text: 'Logout',
-                margin: '0 5 0 0 ',
-                handler: function() {
-                    this.adapter.logout();
-                },
-                scope: this
-            }]
+            items: [
+                {
+                    xtype: 'rallybutton',
+                    text: 'Logout',
+                    margin: '0 5 0 0 ',
+                    handler: function() {
+                        this.adapter.logout();
+                    },
+                    scope: this
+                }, {
+                    xtype: 'rallybutton',
+                    text: 'Refresh',
+                    margin: '0 5 0 0 ',
+                    handler: function() {
+                        this.adapter.fireEvent('ready', this.adapter);
+                    },
+                    scope: this
+                }]
         });
 
         this._addRepoChooser();
@@ -54,7 +63,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
         }
 
         var toolbar = this.down('#topToolbar');
-        var filter = toolbar.insert(3, {
+        var filter = toolbar.insert(4, {
             xtype: 'changesetfilter',
             width: 210,
             listeners: {
@@ -75,12 +84,12 @@ Ext.define('changeset.ui.ChangesetBrowser', {
         var toolbar = this.down('#topToolbar');
         var valueField = 'name';
         this.adapter.getRepositoryStore(function(store) {
-            var combo = toolbar.insert(1, {
+            var combo = toolbar.insert(2, {
                 xtype: 'rallycombobox',
                 margin: '0 5 0 0',
                 store: store,
-                fieldLabel: 'Repository:',
-                labelWidth: 60,
+                fieldLabel: 'Repo:',
+                labelWidth: 30,
                 displayField: valueField,
                 listeners: {
                     beforeselect: function(combo, record) {
@@ -117,7 +126,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
 
         var valueField = 'name';
         this.adapter.getBranchStore(function(store) {
-            combo = toolbar.insert(2, {
+            combo = toolbar.insert(3, {
                 xtype: 'rallycombobox',
                 itemId: 'branchChooser',
                 margin: '0 5 0 0',
