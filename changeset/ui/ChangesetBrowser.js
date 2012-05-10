@@ -72,6 +72,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
                     var tip = Ext.create('Rally.ui.tooltip.ToolTip', {
                         target: cmp.getEl(),
                         anchor: 'right',
+                        hideDelay: 0,
                         html: 'Filter commits by: <br /> <ul><li>-- message</li><li>-- author</li><li>-- revision</li></ul>'
                     });
                 },
