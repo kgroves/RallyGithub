@@ -9,6 +9,8 @@ Ext.define('changeset.ui.ChangesetGrid', {
 
     /**
      * @cfg
+     * @private
+     * 
      * Artifact type prefix regexes to match in commit messages.
      */
     artifactRegexes: [
@@ -73,11 +75,13 @@ Ext.define('changeset.ui.ChangesetGrid', {
             /**
              * @event
              * fired when a revision is clicked.
+             * @param {changeset.model.Commit}
              */
             'revisionClicked',
             /**
              * @event
              * fired when an artifact is clicked.
+             * @param {String}
              */
             'artifactClicked'
         );
@@ -88,6 +92,11 @@ Ext.define('changeset.ui.ChangesetGrid', {
         this.mon(this.store, 'datachanged', this._onStoreDataChanged, this);
     },
 
+    /**
+     * Set the filter value.
+     * 
+     * @param value {String} The value to filter for or {null} for no filter.
+     */
     setCommitFilter: function(value) {
         var store = this.store;
         this.filteredRowCount = null;

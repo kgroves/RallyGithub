@@ -36,12 +36,15 @@ Ext.define('changeset.ui.AddComment', {
         this.addEvents([
             /**
              * @event
-             * fired when comment is saved.
+             * fired when comment requires persisting.
+             * @param {Ext.Component}
+             * @param {String}
              */
             'save',
             /**
              * @event
              * fired when comment edit is canceled.
+             * @param {Ext.Component}
              */
             'cancel'
         ]);

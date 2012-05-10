@@ -11,11 +11,11 @@ Ext.define('changeset.data.CommentLocator', {
     },
     
     /**
-     * Returns a comment that belongs to a specific diff line.
+     * Returns comments that are located at a specific diff line.
      * 
      * @param {String} path File path.
      * @param {String|Int} lineNumber Line number.
-     * @return {changeset.model.Comment}
+     * @return {Array} of {changeset.model.Comment}
      */
     getComments: function(path, lineNumber) {
         var key = this._getCommentKey(path, lineNumber);

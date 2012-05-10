@@ -14,44 +14,45 @@ Ext.define('changeset.data.github.Adapter', {
     },
 
     /**
-     * @cfg
+     * @cfg {String}
      * Github username
      */
     username: null,
 
     /**
-     * @cfg
-     * Github repository name
+     * @cfg {changeset.model.Repository}
+     * @private
+     * Github repository
      */
     repository: null,
 
     /**
-     * @cfg
+     * @cfg {String}
+     * @private
      * OAuth token for Github api
      */
     authToken: null,
 
     /**
-     * @cfg
+     * @cfg {changeset.model.Branch}
      * Branch to grab commits from
+     * @private
      */
     branch: null,
 
     /**
-     * @cfg
+     * @cfg {String}
      * Base url for all Github api requests.
      */
     apiUrl: 'https://api.github.com',
     
     /**
-     * @cfg
+     * @cfg {Int}
      * Page size to use for api calls.
      */
     pageSize: 100,
 
-    /**
-     * stateful configs
-     */
+    // these configs setup statefullness
     stateful: true,
     stateEvents: ['ready', 'statechange'],
     stateId: window.location.href + 'githubAdapter',
@@ -63,16 +64,19 @@ Ext.define('changeset.data.github.Adapter', {
             /**
              * @event
              * Fired when the adapter is ready to be used.
+             * @param {changeset.data.github.Adapter}
              */
             'ready',
             /**
              * @event
              * Fired when the adapter needs authentication.
+             * @param {changeset.data.github.Adapter}
              */
             'authenticationrequired',
             /**
              * @event
              * Fired when the state needs to be saved.
+             * @param {changeset.data.github.Adapter}
              */
             'statechange'
         );
@@ -87,7 +91,8 @@ Ext.define('changeset.data.github.Adapter', {
     },
 
     /**
-     * Get current state.
+     * Get the current state.
+     * @return {Object}
      */
     getState: function() {
         return {
@@ -100,6 +105,7 @@ Ext.define('changeset.data.github.Adapter', {
 
     /**
      * Get an appropriate login message
+     * @return {String}
      */
     getLoginMessage: function() {
         return 'Login to your GitHub account';
@@ -107,6 +113,7 @@ Ext.define('changeset.data.github.Adapter', {
 
     /**
      * Return a url to the repository.
+     * @return {String}
      */
     getRepositoryUrl: function() {
         return 'https://github.com/' + this._getRepoPath();
@@ -114,6 +121,7 @@ Ext.define('changeset.data.github.Adapter', {
 
     /*
      * Gets the currently selected repository.
+     * @return {Object}
      */
     getRepository: function() {
         return this.repository;
@@ -121,6 +129,7 @@ Ext.define('changeset.data.github.Adapter', {
 
     /*
      * Set the repository to fetch data from.
+     * @param {changeset.model.Repository}
      */
     setRepository: function(repository) {
         if( !this.repository || this.repository.name !== repository.raw.name ) {
@@ -132,6 +141,7 @@ Ext.define('changeset.data.github.Adapter', {
 
     /*
      * Gets the currently selected branch.
+     * @return {Object}
      */
     getBranch: function() {
         return this.branch;
@@ -139,6 +149,7 @@ Ext.define('changeset.data.github.Adapter', {
 
     /*
      * Set the branch to fetch data from.
+     * @param {changeset.model.Branch}
      */
     setBranch: function(branch) {
         this.branch = branch.raw;
@@ -147,6 +158,8 @@ Ext.define('changeset.data.github.Adapter', {
 
     /**
      * Constructs a store which populates repository models.
+     * @param {Function} callback Function to call after store is created.
+     * @param {Object} scope Scope to execute callback with.
      */
     getRepositoryStore: function(callback, scope) {
         var url = [
@@ -167,6 +180,8 @@ Ext.define('changeset.data.github.Adapter', {
 
     /**
      * Constructs a store which populates branch models.
+     * @param {Function} callback Function to call after store is created.
+     * @param {Object} scope Scope to execute callback with.
      */
     getBranchStore: function(callback, scope) {
         var url = [
@@ -188,6 +203,8 @@ Ext.define('changeset.data.github.Adapter', {
 
     /**
      * Returns a store which populates commit models.
+     * @param {Function} callback Function to call after store is created.
+     * @param {Object} scope Scope to execute callback with.
      */
     getCommitStore: function(callback, scope) {
         this.getBranchStore(function(store) {
@@ -200,6 +217,9 @@ Ext.define('changeset.data.github.Adapter', {
 
     /**
      * Returns a store which populates changeset models.
+     * @param {changeset.model.Commit} record Commit to get changeset for.
+     * @param {Function} callback Function to call after store is created.
+     * @param {Object} scope Scope to execute callback with.
      */
     getChangesetStore: function(record, callback, scope) {
         if (record.get('parents').length < 1) {
@@ -232,6 +252,9 @@ Ext.define('changeset.data.github.Adapter', {
     
     /**
      * Returns a store which populates comment models.
+     * @param {changeset.model.Commit} record Commit record to retrieve comments for.
+     * @param {Function} callback Function to call after store is created.
+     * @param {Object} scope Scope to execute callback with.
      */
     getCommentStore: function(record, callback, scope) {
         var url = [
@@ -260,6 +283,7 @@ Ext.define('changeset.data.github.Adapter', {
 
     /**
      * Saves a comment
+     * 
      * @param data {Object} The comment data to save
      * @param callback {Function} The callback to be executed when the save is complete.
      * @param scope {Object} The scope to execute the callback in.
@@ -299,7 +323,10 @@ Ext.define('changeset.data.github.Adapter', {
     /**
      * Grabs an OAuth token using the passed credentials.
      * If this is successful, it will fire the 'ready' event,
-     * if it fails, it will refire 'authenticationrequired'.
+     * if it fails, it will fire  the 'authenticationrequired' event.
+     * 
+     * @param {String} username Username to login with.
+     * @param {String} password Password to login with.
      */
     authenticate: function(username, password) {
         this.username = username;
@@ -333,6 +360,8 @@ Ext.define('changeset.data.github.Adapter', {
 
     /**
      * Logs user out of github api.
+     * 
+     * Fires 'authenticationrequired'.
      */
     logout: function() {
         this.repository = null;

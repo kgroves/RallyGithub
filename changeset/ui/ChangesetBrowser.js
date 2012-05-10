@@ -19,7 +19,6 @@ Ext.define('changeset.ui.ChangesetBrowser', {
 
     /**
      * @cfg
-     * Adapter to use for retrieving data.
      */
     adapter: null,
 

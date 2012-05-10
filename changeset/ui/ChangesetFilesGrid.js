@@ -47,9 +47,7 @@ Ext.define('changeset.ui.ChangesetFilesGrid', {
             storeConfig: this.storeConfig,
             showPagingToolbar: false
         });
-
+        
         this.callParent([config]);
     }
-
-
 });

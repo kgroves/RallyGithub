@@ -2,9 +2,7 @@ Ext.define('changeset.data.github.Proxy', {
     extend: 'Ext.data.proxy.Rest',
 
     statics: {
-        /**
-         * extract functions are used to normalize data objects coming in from the server
-         */
+        // extract functions are used to normalize data objects coming in from the server
         extractCommitValues: function(data) {
             var output = {
                 revision: data.sha,

@@ -20,7 +20,8 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
     
     /**
      * @cfg {changeset.data.CommentLocator}
-     * Comments attached to this commit. Rendered inline.
+     * 
+     * Used to find comments that need to be rendered at a specific line.
      */
     commentLocator: null,
 

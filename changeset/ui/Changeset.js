@@ -11,7 +11,6 @@ Ext.define('changeset.ui.Changeset', {
 
     /**
      * @cfg
-     * Adapter to use for retrieving data.
      */
     adapter: null,
 

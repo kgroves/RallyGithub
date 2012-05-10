@@ -23,7 +23,8 @@ Ext.define('changeset.data.github.CommitStore', {
     },
 
     /**
-     * Overridden to remove duplicate row.
+     * Overridden to remove duplicate row that comes back
+     * because of API's funky paging.
      * @private
      */
     onProxyLoad: function(operation) {

@@ -24,6 +24,7 @@ Ext.define('changset.ui.ChangesetFilter', {
             /**
              * @event
              * fired when the filter button is clicked.
+             * @param {String}
              */
             'filter'
         ]);
