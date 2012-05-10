@@ -55,10 +55,16 @@ Ext.define('changeset.data.github.Adapter', {
     // these configs setup statefullness
     stateful: true,
     stateEvents: ['ready', 'statechange'],
-    stateId: window.location.href + 'githubAdapter',
 
     constructor: function(config) {
         Ext.apply(this, config);
+        
+        var urlParts = window.location.href.split('?');
+        this.stateId = 'githubAdapter-' + urlParts[0];
+        if (urlParts.length > 1) {
+            var urlParams = Ext.Object.fromQueryString(urlParts[1]);
+            this.stateId += '-' + urlParams.panelOid || 'page';
+        }
 
         this.addEvents(
             /**
