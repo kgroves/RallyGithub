@@ -80,7 +80,7 @@ Ext.define('changeset.ui.Changeset', {
                             fn: function() {
                                 addedCount++;
                                 if (addedCount === store.count()) {
-                                    prettyPrint();
+                                    //prettyPrint(); disabled until we can get this working.
                                     this.up('panel').setLoading(false);
                                 }
                             },
