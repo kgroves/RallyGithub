@@ -163,7 +163,8 @@ Ext.define('changeset.ui.ChangesetBrowser', {
                 store: store
             });
             store.load();
-            grid.setTitle('Commits');
+            grid.setTitle(Ext.String.format('Commits for <a href="{0}">{1}</a>',
+                    this.adapter.getRepositoryUrl(), this.adapter.getRepository().name));
             grid.expand();
             this.mon(grid, 'artifactClicked', this._showArtifact, this);
             this.mon(grid, 'revisionClicked', this._showRevision, this);
