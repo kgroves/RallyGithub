@@ -31,7 +31,9 @@ Ext.define('changeset.ui.Changeset', {
             record: this.record
         });
 
-        this._loadComments();
+        if (this.record.get('parents').length > 0) {
+            this._loadComments();
+        }
     },
     
     _loadComments: function() {

@@ -1576,7 +1576,9 @@
                         record: this.record
                     });
             
-                    this._loadComments();
+                    if (this.record.get('parents').length > 0) {
+                        this._loadComments();
+                    }
                 },
                 
                 _loadComments: function() {
@@ -2070,6 +2072,7 @@
         .app .x-grid-cell-inner, .app .x-column-header-text {
             margin: 4px 2px;
             font-size: 12px;
+            text-overflow: ellipsis;
         }
     </style>
 </head>
