@@ -93,5 +93,5 @@ Ext.define('changeset.ui.Changeset', {
             }, this);
             task.delay(10);
         }, this);
-    },
+    }
 });

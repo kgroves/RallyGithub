@@ -306,7 +306,7 @@ Ext.define('changeset.ui.ChangesetFileDiff', {
 
     _onLineOut: function(el) {
         el.removeCls('line-selected');
-        imgEl = el.down('.add-comment-icon');
+        var imgEl = el.down('.add-comment-icon');
         if (imgEl) {
             imgEl.destroy();
         }

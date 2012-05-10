@@ -660,14 +660,7 @@
                  */
                 loadPage: function(page, options) {
                     this._addShaToOptions(page);
-                    if (page > 1) {
-                        // temporarily increase page size since we will get a duplicate commit back.
-                        this.pageSize++;
-                    }
                     var result = this.callParent(arguments);
-                    if (page > 1) {
-                        this.pageSize--;
-                    }
                     return result;
                 },
             
@@ -695,8 +688,7 @@
                         if (page === 1) {
                             sha = this.startSha;
                         } else {
-                            var lastCommitIdx = ((page - 1) * this.pageSize) - 1;
-                            var lastCommit = data.getAt(lastCommitIdx);
+                            var lastCommit = data.getAt(data.getCount() - 1);
                             sha = lastCommit.get('revision');
                         }
             
@@ -1350,7 +1342,11 @@
                     }
             
                     // If the count is less than the pagesize we've run out of pages.
-                    if (records.length < store.pageSize) {
+                    var pageSize = store.pageSize;
+                    if (store.currentPage > 1) {
+                        pageSize--;
+                    }
+                    if (records.length < pageSize) {
                         this.down('#loadButton').destroy();
                     }
             
@@ -1648,8 +1644,12 @@
                 },
             
                 _addFilter: function() {
+                    if (this.down('changesetfilter')) {
+                        return;
+                    }
+            
                     var toolbar = this.down('#topToolbar');
-                    var filter = toolbar.add({
+                    var filter = toolbar.insert(3, {
                         xtype: 'changesetfilter',
                         width: 210,
                         listeners: {
@@ -1670,7 +1670,7 @@
                     var toolbar = this.down('#topToolbar');
                     var valueField = 'name';
                     this.adapter.getRepositoryStore(function(store) {
-                        var combo = toolbar.add({
+                        var combo = toolbar.insert(1, {
                             xtype: 'rallycombobox',
                             margin: '0 5 0 0',
                             store: store,
@@ -1712,7 +1712,7 @@
             
                     var valueField = 'name';
                     this.adapter.getBranchStore(function(store) {
-                        combo = toolbar.add({
+                        combo = toolbar.insert(2, {
                             xtype: 'rallycombobox',
                             itemId: 'branchChooser',
                             margin: '0 5 0 0',
