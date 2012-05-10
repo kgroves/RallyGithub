@@ -23,6 +23,7 @@ Ext.define('changeset.ui.ChangesetGrid', {
         itemId: 'messageCol',
         flex: 1,
         renderer: function(value) {
+            value = Ext.String.htmlEncode(value);
             Ext.each(this.artifactRegexes, function(artifactRegex) {
                 value = value.replace(artifactRegex, '<a href="#" class="artifact-link">$1$2</a>');
             });
