@@ -35,7 +35,7 @@ Ext.define('CustomApp', {
         this.removeAll();
         this.add({
             xtype: 'changesetbrowser',
-            margin: '0 5 5 5',
+            margin: 2,
             border: 0,
             adapter: adapter,
             flex: 1

@@ -157,7 +157,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             var grid = this.add({
                 xtype: 'changesetgrid',
                 itemId: 'changeSetGrid',
-                margin: '10 0 0 0',
+                margin: 0,
                 autoScroll: true,
                 model: 'changeset.model.Commit',
                 store: store
