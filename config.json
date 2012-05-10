@@ -3,6 +3,8 @@
     "className": "CustomApp",
     "sdk": "2.0p",
     "javascript": [
+        "js-lib/google-code-prettify/prettify.js",
+
         "changeset/model/Branch.js",
         "changeset/model/Comment.js",
         "changeset/model/Commit.js",
