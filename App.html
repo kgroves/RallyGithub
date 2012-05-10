@@ -902,7 +902,7 @@
                  * 
                  * Regex used to parse unified diff delimiter.
                  */
-                unifiedDiffRegex: /^@@\s\-(\d+)(,\d+)?\s(\d+)(,\d+)?\s@@/,
+                unifiedDiffRegex: /^@@\s\-(\d+)(,\d+)?\s\+(\d+)(,\d+)?\s@@/,
                 
                 /**
                  * @cfg {changeset.data.CommentLocator}
@@ -952,7 +952,7 @@
             
                 _renderSourceTable: function() {
                     var diffLines = this.record.get('diff').split("\n");
-                    if (diffLines[diffLines.length - 1] === "\ No newline at end of file") {
+                    if (diffLines[diffLines.length - 1] === "\\ No newline at end of file") {
                         diffLines.pop();
                     }
                     var lineDetails,
@@ -1763,7 +1763,7 @@
                         var grid = this.add({
                             xtype: 'changesetgrid',
                             itemId: 'changeSetGrid',
-                            margin: '10 0 0 0',
+                            margin: 0,
                             autoScroll: true,
                             model: 'changeset.model.Commit',
                             store: store
@@ -1858,7 +1858,7 @@
                     this.removeAll();
                     this.add({
                         xtype: 'changesetbrowser',
-                        margin: '0 5 5 5',
+                        margin: 2,
                         border: 0,
                         adapter: adapter,
                         flex: 1
