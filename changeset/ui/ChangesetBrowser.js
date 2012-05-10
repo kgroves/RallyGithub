@@ -223,6 +223,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
         var grid = this.down('#changeSetGrid');
         if (grid) {
             grid.setCommitFilter(value);
+            grid.expand();
         }
     }
 });
