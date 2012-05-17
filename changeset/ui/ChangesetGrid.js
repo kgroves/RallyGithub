@@ -14,9 +14,9 @@ Ext.define('changeset.ui.ChangesetGrid', {
      * Artifact type prefix regexes to match in commit messages.
      */
     artifactRegexes: [
-        /(\s+)(DE\d+)/,
-        /(\s+)(US\d+)/,
-        /(\s+)(TA\d+)/
+        /(DE\d+)/,
+        /(US\d+)/,
+        /(TA\d+)/
     ],
 
     columnCfgs: [{
@@ -27,7 +27,7 @@ Ext.define('changeset.ui.ChangesetGrid', {
         renderer: function(value) {
             value = Ext.String.htmlEncode(value);
             Ext.each(this.artifactRegexes, function(artifactRegex) {
-                value = value.replace(artifactRegex, '<a href="#" class="artifact-link">$1$2</a>');
+                value = value.replace(artifactRegex, '<a href="#" class="artifact-link">$1</a>');
             });
             return value;
         }
