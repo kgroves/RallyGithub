@@ -1,7 +1,3 @@
-*.iml
-*.ipr
-.DS_Store
-.idea
-*.project
-*.settings
-*.html
+*debug.html
+/App.html
+.*
