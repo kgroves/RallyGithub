@@ -307,7 +307,6 @@ Ext.define('changeset.data.github.Adapter', {
         Ext.Ajax.request({
             url: url,
             method: 'POST',
-            stripRallyHeaders: true,
             jsonData: {
                 body: data.comment,
                 commit_id: data.revision,
@@ -340,7 +339,6 @@ Ext.define('changeset.data.github.Adapter', {
         Ext.Ajax.request({
             url: this.apiUrl + '/authorizations',
             method: 'GET',
-            stripRallyHeaders: true,
             headers: {
                 Authorization: this._getBasicAuth(password)
             },
@@ -392,7 +390,6 @@ Ext.define('changeset.data.github.Adapter', {
         Ext.Ajax.request({
             url: this.apiUrl + '/authorizations',
             method: 'POST',
-            stripRallyHeaders: true,
             headers: {
                 Authorization: this._getBasicAuth(password)
             },
@@ -412,16 +409,6 @@ Ext.define('changeset.data.github.Adapter', {
         });
     },
 
-    /**
-     * Removes Rally specific headers from Ajax request options.
-     */
-    _stripRallyHeaders: function(opts) {
-        if ((opts.stripRallyHeaders || (opts.scope && opts.scope.stripRallyHeaders)) && opts.headers) {
-            delete opts.headers["X-RallyIntegrationLibrary"];
-            delete opts.headers["X-RallyIntegrationName"];
-        }
-    },
-
     _getRepoPath: function() {
         return this.repository.owner.login + '/' + this.repository.name;
     },
@@ -435,7 +422,9 @@ Ext.define('changeset.data.github.Adapter', {
     },
 
     _onBeforeAjaxRequest: function(ext, opts) {
-        this._stripRallyHeaders(opts);
+        if (Ext.isEmpty(opts.headers)) {
+            opts.headers = {};
+        }
 
         if (!opts.headers.hasOwnProperty('Authorization') && this.authToken) {
             opts.headers.Authorization = 'token ' + this.authToken;
@@ -485,7 +474,6 @@ Ext.define('changeset.data.github.Adapter', {
         Ext.Ajax.request({
             url: url,
             method: 'GET',
-            stripRallyHeaders: true,
             jsonData: {},
             success: function(response, opts) {
                 var data = Ext.decode(response.responseText);
