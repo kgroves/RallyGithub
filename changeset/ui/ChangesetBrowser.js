@@ -30,6 +30,8 @@ Ext.define('changeset.ui.ChangesetBrowser', {
     _populateToolbar: function() {
         this.addDocked({
             itemId: 'topToolbar',
+            xtype: 'toolbar',
+            cls: 'changeset-browser-toolbar',
             dock: 'top',
             border: 0,
             padding: 5,
@@ -172,7 +174,7 @@ Ext.define('changeset.ui.ChangesetBrowser', {
                 model: 'changeset.model.Commit',
                 store: store
             });
-            store.load();
+            //store.load();
             grid.setTitle(Ext.String.format('Commits for <a href="{0}" target="_blank">{1}</a>',
                     this.adapter.getRepositoryUrl(), this.adapter.getRepository().name));
             grid.expand();
@@ -200,7 +202,8 @@ Ext.define('changeset.ui.ChangesetBrowser', {
             var results = result.QueryResult.Results;
             if (results && results.length) {
                 var ref = results[0]._ref;
-                var detailLink = Rally.util.Navigation.createRallyDetailUrl(ref);
+                //var detailLink = Rally.util.Navigation.createRallyDetailUrl(ref);
+                var detailLink = Rally.util.DetailLinkBuilder.build("foo", ref, true);
                 window.open(detailLink, 'detailpage');
             }
         }
