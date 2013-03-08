@@ -1,7 +1,7 @@
 {
     "name": "RallyGithub",
     "className": "CustomApp",
-    "sdk": "2.0p2",
+    "sdk": "2.0p5",
     "javascript": [
         "js-lib/google-code-prettify/prettify.js",
 

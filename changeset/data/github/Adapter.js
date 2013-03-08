@@ -247,8 +247,7 @@ Ext.define('changeset.data.github.Adapter', {
                 url: url,
                 reader: {
                     type: 'json',
-                    root: 'files',
-                    extractValues: changeset.data.github.Proxy.extractChangesetFileValues
+                    readRecords: changeset.data.github.Proxy.extractChangesetFileValues
                 }
             })
         });
@@ -279,7 +278,7 @@ Ext.define('changeset.data.github.Adapter', {
                 url: url,
                 reader: {
                     type: 'json',
-                    extractValues: changeset.data.github.Proxy.extractCommentValues
+                    readRecords: changeset.data.github.Proxy.extractCommentValues
                 }
             })
         });
@@ -317,7 +316,7 @@ Ext.define('changeset.data.github.Adapter', {
             success: function(response, opts) {
                 if (callback) {
                     var data = Ext.decode(response.responseText);
-                    var record = new changeset.model.Comment(changeset.data.github.Proxy.extractCommentValues(data));
+                    var record = new changeset.model.Comment(changeset.data.github.Proxy.extractComment(data));
                     callback.call(scope, record);
                 }
             },
@@ -454,12 +453,17 @@ Ext.define('changeset.data.github.Adapter', {
                  url: url,
                  reader: {
                      type: 'json',
-                     extractValues: changeset.data.github.Proxy.extractCommitValues
+                     readRecords: changeset.data.github.Proxy.extractCommitData 
                  }
              })
         });
-
-        callback.call(scope, commitStore);
+        commitStore.load({
+            scope: this,
+            callback: function(records, operation, success) {
+                callback.call(scope, commitStore);    
+            }
+        });
+        
     },
 
     _getChangeset: function(record, callback, scope) {
