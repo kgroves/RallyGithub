@@ -101,6 +101,27 @@ Ext.define('changeset.ui.ChangesetBrowser', {
                         }
                     },
                     scope: this
+                },
+                listConfig: {
+                    tpl: Ext.create('Ext.XTemplate',
+                      '<ul><tpl for=".">',
+                      '<tpl if="xindex == 1 || this.getGroupStr(parent[xindex - 2]) != this.getGroupStr(values)">',
+                      '<li class="x-combo-list-group"><b>{[this.getGroupStr(values)]}</b></li>',
+                      '</tpl>',
+                      '<li role="option" class="x-boundlist-item">{name}</li>',
+                      '</tpl>' +
+                      '</ul>',
+                      {
+                        getGroupStr: function (values) {
+                          var groupStr;
+                          if(values.private) {
+                            groupStr = 'Private';
+                          } else {
+                            groupStr = 'Public';
+                          }
+                          return groupStr;  
+                        }
+                    })
                 }
             });
 

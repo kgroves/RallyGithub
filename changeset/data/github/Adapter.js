@@ -184,6 +184,24 @@ Ext.define('changeset.data.github.Adapter', {
         callback.call(scope, store);
     },
 
+    getOrganizationStore: function(callback, scope) {
+        var url =[
+        this.apiUrl,
+        'user',
+        'orgs'].join('/');
+
+        var store = Ext.create('Ext.data.Store', {
+            model:'',
+            proxy: Ext.create('changeset.data.github.Proxy', {
+                url: url,
+                reader: {
+                    type: 'json',
+                    readRecords: changeset.data.github.Proxy.extractChangesetFileValues
+                }
+            })
+        });
+    },
+
     /**
      * Constructs a store which populates branch models.
      * @param {Function} callback Function to call after store is created.

@@ -3,6 +3,8 @@ Ext.define('changeset.model.Repository', {
     idProperty: 'name',
     fields: [
         {name: 'url', type: 'string'},
-        {name: 'name', type: 'string'}
+        {name: 'name', type: 'string'},
+        {name: 'private', type: 'boolean'}
     ]
+    
 });
