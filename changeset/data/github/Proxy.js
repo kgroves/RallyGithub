@@ -59,21 +59,9 @@ Ext.define('changeset.data.github.Proxy', {
         },
         
         extractCommentValues: function(data) {
-            // var extractCommentValue = function(data) {
-            //     var output = {
-            //         revision: data.commit_id,
-            //         filename: data.path,
-            //         lineNumber: data.position,
-            //         comment: data.body,
-            //         timestamp: data.created_at,
-            //         user: data.user,
-            //         avatarUrl: data.user ? data.user.avatar_url : null
-            //     };
-            //     return output;
-            // };
             var recordArray = [];
-            Ext.Array.each(data, changeset.data.github.Proxy.extractComment(dataItem) {
-                recordArray.push(Ext.create('changeset.model.Comment', extractCommentValue(dataItem)))
+            Ext.Array.each(data, function(dataItem) {
+                recordArray.push(Ext.create('changeset.model.Comment', changeset.data.github.Proxy.extractComment(dataItem)))
             });
 
             var result_set = new Ext.data.ResultSet({
